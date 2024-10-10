@@ -2,6 +2,7 @@ import * as yup from 'yup';
 import { keyBy, isEmpty } from 'lodash';
 import render from './render.js';
 import onChange from 'on-change';
+import fsp from 'fs/promises';
 
 const schemaUrl = yup.string().url();
 
@@ -31,11 +32,11 @@ export default () => {
 
     const state = onChange(initialState, render(elements, initialState));
 
-    elements.form.addEventListener('submit', (e) => {
+    elements.form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(e.target);
-      const url = formData.get('url');
-      const checkUrl = validate(url);
+      const url = await formData.get('url');
+      const checkUrl = await validate(url);
       console.log('CHECK URL  ', checkUrl);
       state.inputUi = isEmpty(checkUrl);
 
