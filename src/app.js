@@ -2,7 +2,7 @@ import * as yup from 'yup';
 import { keyBy, isEmpty } from 'lodash';
 import render from './render.js';
 import onChange from 'on-change';
-import fsp from 'fs/promises';
+import rssParser from 'rss-parser';
 
 const schemaUrl = yup.string().url();
 
