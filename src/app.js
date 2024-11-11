@@ -7,7 +7,7 @@ const schemaUrl = yup.string().url();
 
 function validate(link) {
   try {
-    schemaUrl.validate(link, { abortEarly: false });
+    schemaUrl.validateSync(link, { abortEarly: false });
     return {};
   } catch (error) {
     return keyBy(error.inner, 'path');
@@ -35,11 +35,12 @@ export default () => {
 
     const state = onChange(initialState, render(elements, initialState));
 
-    elements.form.addEventListener('submit', async (e) => {
+    elements.form.addEventListener('submit', (e) => {
       e.preventDefault();
       const formData = new FormData(e.target);
       const url = formData.get('url');
-      const checkUrl = await validate(url);
+      const checkUrl = validate(url);
+      // console.log('checkUrl  ', checkUrl);
       const checkError = isEmpty(checkUrl);
       // Проверяем есть ли ссылка среди фидах
       const arrLinksFeed = initialState.dataFeeds.map(({ link }) => link);
