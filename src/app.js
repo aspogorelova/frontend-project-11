@@ -43,9 +43,9 @@ export default () => {
       const checkError = isEmpty(checkUrl);
       // Проверяем есть ли ссылка среди фидах
       const arrLinksFeed = initialState.dataFeeds.map(({ link }) => link);
-      console.log('arrLinksFeed  ', arrLinksFeed);
+      // console.log('arrLinksFeed  ', arrLinksFeed);
       const checkDubleLink = arrLinksFeed.includes(url);
-      console.log('check double link  ', checkDubleLink);
+      // console.log('check double link  ', checkDubleLink);
 
       if (checkError === false) {
         console.log('error in app click');
