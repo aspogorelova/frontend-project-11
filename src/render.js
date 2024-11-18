@@ -1,8 +1,18 @@
-const renderInput = (els, state) => {
-  console.log('state inputUi in renderInput  ', state.inputUi);
+const renderContentPage = (els, i18next) => {
+  console.log('render start page  ', els);
+  els.headerPage.textContent = i18next.t('contentPage.headerPage');
+  els.preheader.textContent = i18next.t('contentPage.preheader');
+  els.placeholder.textContent = i18next.t('contentPage.placeholder');
+  els.btnPrimary.textContent = i18next.t('contentPage.button');
+  els.example.textContent = i18next.t('contentPage.example');
+  els.footer.innerHTML = i18next.t('contentPage.footer');
+};
+
+// ИНПУТ
+const renderInput = (els, state, i18next) => {
   if (state.inputUi === true) {
     console.log('SUCCESS in renderInput');
-    els.feedback.textContent = 'RSS успешно загружен';
+    els.feedback.textContent = i18next.t('feedback.success');
     els.feedback.classList.remove('text-danger');
     els.feedback.classList.add('text-success');
     els.input.classList.remove('is-invalid');
@@ -13,10 +23,10 @@ const renderInput = (els, state) => {
     els.feedback.classList.remove('text-success');
   }
 
-  els.input.value = '';
 };
 
-const renderResult = (els, val, state) => {
+// РЕЗУЛЬТАТ
+const renderResult = (els, val, state, i18next) => {
   console.log('GOOD');
   // Рисуем колонку с постами. Заголовок Посты
   const divCardPost = document.createElement('div');
@@ -27,7 +37,7 @@ const renderResult = (els, val, state) => {
   divCardPost.append(divCardBodyPosts);
   const headerPosts = document.createElement('h2');
   headerPosts.classList.add('card-title', 'h4');
-  headerPosts.textContent = 'Посты';
+  headerPosts.textContent = i18next.t('contentPage.headerPosts');
   divCardBodyPosts.append(headerPosts);
 
   // Рисуем список из постов
@@ -48,7 +58,7 @@ const renderResult = (els, val, state) => {
     button.setAttribute('data-bs-toggle', 'modal');
     button.setAttribute('data-bs-target', '#modal');
     button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-    button.textContent = 'Просмотр';
+    button.textContent = i18next.t('contentPage.buttonPostWatch');
     li.append(button);
     ulPosts.append(li);
   });
@@ -63,7 +73,7 @@ const renderResult = (els, val, state) => {
   divCardFeeds.append(divCardBodyFeeds);
   const headerFeeds = document.createElement('h2');
   headerFeeds.classList.add('card-title', 'h4');
-  headerFeeds.textContent = 'Фиды';
+  headerFeeds.textContent = i18next.t('contentPage.headerFeeds');
   divCardBodyFeeds.append(headerFeeds);
 
   // Рисуем список фидов
@@ -91,12 +101,14 @@ const renderResult = (els, val, state) => {
   divCardBodyFeeds.append(ulFeeds);
 
 
-  renderInput(els, state);
+  renderInput(els, state, i18next);
 };
 
-// Рендер ошибок
-const renderError = (els, val, prevVal, state) => {
+// ОШИБКИ
+const renderError = (els, val, prevVal, state, i18next) => {
   console.log('VAL  ', val);
+  // console.log('i18next  ', i18next);
+
   // Нет ошибки
   if (val === '') {
     renderInput(els, state);
@@ -104,24 +116,25 @@ const renderError = (els, val, prevVal, state) => {
 
   // Есть ошибка 
   if (val !== '') {
-    els.feedback.textContent = val;
+    els.feedback.textContent = i18next.t(`feedback.${val}`);
     renderInput(els, state);
   }
 };
 
-export default (elements, state) => (path, value, prevValue) => {
+export default (elements, state, i18next) => (path, value, prevValue) => {
     console.log('STATE  ', state);
     console.log('PATH, value, prevValue in render ', path, value, prevValue);
-    elements.example.style.color = 'transparent';
+    // elements.example.textContent = '';
+    renderContentPage(elements, i18next);
 
     switch (path) {
         case 'error':
-            renderError(elements, value, prevValue, state);
+            renderError(elements, value, prevValue, state, i18next);
             break;
 
         case 'inputUi':
           console.log('path in inputUi  ', path);
-            renderResult(elements, value,state);
+            renderResult(elements, value, state, i18next);
             break;
 
         default: 'error';
