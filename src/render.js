@@ -1,5 +1,5 @@
 const renderContentPage = (els, i18next) => {
-  console.log('render start page  ', els);
+  // console.log('render start page  ', els);
   els.headerPage.textContent = i18next.t('contentPage.headerPage');
   els.preheader.textContent = i18next.t('contentPage.preheader');
   els.placeholder.textContent = i18next.t('contentPage.placeholder');
@@ -80,11 +80,15 @@ const renderResult = (els, val, state, i18next) => {
   const ulFeeds = document.createElement('ul');
   ulFeeds.classList.add('list-group', 'border-0', 'rounded-0');
   const arrFeeds = [
-    { link: 'https://aljazeera.com/xml/rss/all.xml', 
-    feed: { nameFeed: 'Что-то о чем-то', describeFeed: 'Что-то с чем-то' }},
-    { link: 'https://thecipherbrief.com/feed',
-    feed: { nameFeed: 'Котиков все любят', describeFeed: 'А кто не любит, тот дурак' }}
-  ]
+    {
+      link: 'https://aljazeera.com/xml/rss/all.xml',
+      feed: { nameFeed: 'Что-то о чем-то', describeFeed: 'Что-то с чем-то' },
+    },
+    {
+      link: 'https://thecipherbrief.com/feed',
+      feed: { nameFeed: 'Котиков все любят', describeFeed: 'А кто не любит, тот дурак' },
+    },
+  ];
   arrFeeds.map(({ nameFeed, describeFeed }) => {
     const li = document.createElement('li');
     li.classList.add('list-group-item', 'border-0', 'border-end-0');
@@ -100,44 +104,41 @@ const renderResult = (els, val, state, i18next) => {
   });
   divCardBodyFeeds.append(ulFeeds);
 
-
   renderInput(els, state, i18next);
 };
 
 // ОШИБКИ
-const renderError = (els, val, prevVal, state, i18next) => {
-  console.log('VAL  ', val);
-  // console.log('i18next  ', i18next);
+const renderError = (els, val, state, i18next) => {
+  console.log('VAL in renderError  ', val);
 
   // Нет ошибки
   if (val === '') {
     renderInput(els, state);
   }
 
-  // Есть ошибка 
+  // Есть ошибка
   if (val !== '') {
-    els.feedback.textContent = i18next.t(`feedback.${val}`);
+    els.feedback.textContent = i18next.t(`feedback.${state.form.error}`);
     renderInput(els, state);
   }
 };
 
-export default (elements, state, i18next) => (path, value, prevValue) => {
-    console.log('STATE  ', state);
-    console.log('PATH, value, prevValue in render ', path, value, prevValue);
-    // elements.example.textContent = '';
-    renderContentPage(elements, i18next);
+export default (elements, state, i18next) => (path, value) => {
+  console.log('STATE  ', state);
+  console.log('PATH, value in render ', path, value);
+  renderContentPage(elements, i18next);
 
-    switch (path) {
-        case 'error':
-            renderError(elements, value, prevValue, state, i18next);
-            break;
+  switch (path) {
+    case 'form.error':
+      renderError(elements, value, state, i18next);
+      break;
 
-        case 'inputUi':
-          console.log('path in inputUi  ', path);
-            renderResult(elements, value, state, i18next);
-            break;
+    case 'form':
+      console.log('path in inputUi  ', path);
+      renderResult(elements, value, state, i18next);
+      break;
 
-        default: 'error';
-          break;
-    }
+    default: 'error';
+      break;
+  }
 };
