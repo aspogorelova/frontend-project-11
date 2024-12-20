@@ -1,9 +1,9 @@
 import i18next from 'i18next';
 import * as yup from 'yup';
-import { isEmpty } from 'lodash';
+import { isEmpty, uniqueId } from 'lodash';
 import render from './render.js';
-import onChange from 'on-change';
 import resources from './locales/index.js';
+import parser from './parser.js';
 
 export default () => {
   const i18nextInstance = i18next.createInstance();
@@ -26,7 +26,6 @@ export default () => {
       schemaUrl.validateSync(link, { abortEarly: false });
       return {};
     } catch (error) {
-      // const messages = error.errors.map((err) => i18nextInstance.t(err.key));
       const messages = error.errors.map((err) => err.key);
       return messages;
     }
@@ -55,10 +54,11 @@ export default () => {
       status: 'idle',
       error: '',
     },
-    // inputUi: false,
-    dataPosts: [],
-    dataFeeds: [{ link: 'https://thecipherbrief.com/feed', feed: { nameFeed: 'The Cipher Brief', describeFeed: 'Your Trusted Source for National Security News & Analysis' } }],
-    // error: '',
+    dataPosts: { // [{ idFeed, idPost, titlePost, descriptionPost, linkPost }]
+      listPosts: [],
+      openedPosts: [],
+    },
+    dataFeeds: [], // [{ idFeed, titleFeed, descriptionFeed, linkFeed }]
   };
 
   // Рендер не отрисовывает текстовую часть страницы!
@@ -70,7 +70,21 @@ export default () => {
   elements.example.textContent = i18nextInstance.t('contentPage.example');
   elements.footer.innerHTML = i18nextInstance.t('contentPage.footer');
 
-  const state = onChange(initialState, render(elements, initialState, i18nextInstance));
+  const state = render(elements, initialState, i18nextInstance);
+
+  // Функция обновления постов
+  const upgradePosts = (initialState) => {
+    console.log('START UPGRADE', initialState.dataFeeds);
+    state.dataFeeds.map(({ idFeed, linkFeed }) => {
+      fetch(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(linkFeed)}`)
+        .then((response) => response.json)
+        .then((data) => parser(data))
+        .then(({ feed, posts }) => {
+          console.log('FEED in upgrade  ', feed);
+          console.log('POSTS in upgrade  ', posts);
+        })      
+    });
+  };
 
   // Событие при клике
   elements.form.addEventListener('submit', (e) => {
@@ -79,37 +93,41 @@ export default () => {
     const url = formData.get('url');
     // Проверяем правильная ссылка или нет
     const checkUrl = validate(url);
-    // console.log('checkUrl in event  ', checkUrl);
     const checkError = isEmpty(checkUrl);
-    console.log('checkError  ', checkError);
     // Проверяем есть ли ссылка среди фидов
-    const arrLinksFeed = initialState.dataFeeds.map(({ link }) => link);
+    const arrLinksFeed = initialState.dataFeeds.map(({ linkFeed }) => linkFeed);
     const checkDubleLink = arrLinksFeed.includes(url);
 
     if (checkError === false) {
-      // console.log('error in app click');
       initialState.form.isValid = checkError;
       state.form.error = String(checkUrl);
-      // console.log('check error in state  ', initialState.form.error);
     };
     
     if (checkError === true) {
-      console.log('CORRECT URL  ');
       initialState.form.error = '';
       if (checkDubleLink) {
-        // console.log('double url  ');
-        initialState.form.isValid = checkError;
+        initialState.form.isValid = false;
         state.form.error = 'doubleUrl';
       } else {
+        initialState.form.isValid = true;
+        state.loadingProccess.status = 'load';
         const responseUrl = fetch(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
         .then((response) => response.json())
-        .then((data) => console.log('RESULT RESPONSE.JSON()  ', data))
-        .then((data) => {
-          const parser = new DOMParser();
-          const parserData = parser.parseFromString(data, "application/xml");
-          console.log('RESULT PARSER ', parserData);
+        .then((data) => parser(data))
+        .then(({ feed, posts }) => {
+          feed.idFeed = uniqueId('feed_');
+          posts.map((post) => {
+            post.idFeed = feed.idFeed;
+          });
+          initialState.dataFeeds = initialState.dataFeeds.concat(feed);
+          initialState.dataPosts.listPosts = initialState.dataPosts.listPosts.concat(posts);
+          state.loadingProccess.status = 'success';
+          console.log('initial state after add new feed and posts  ', initialState);
+          // setInterval(upgradePosts(initialState), 10000);
         })
-        .catch(console.error);
+        .catch((error) => {
+          console.log(error);
+        });
       };
     }
   });

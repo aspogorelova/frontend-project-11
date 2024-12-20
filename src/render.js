@@ -1,3 +1,5 @@
+import onChange from 'on-change';
+
 const renderContentPage = (els, i18next) => {
   // console.log('render start page  ', els);
   els.headerPage.textContent = i18next.t('contentPage.headerPage');
@@ -9,26 +11,41 @@ const renderContentPage = (els, i18next) => {
 };
 
 // ИНПУТ
-const renderInput = (els, state, i18next) => {
-  if (state.inputUi === true) {
-    console.log('SUCCESS in renderInput');
-    els.feedback.textContent = i18next.t('feedback.success');
+const renderResultCheckedInput = (els, state, i18next) => {
+  if (state.form.isValid === true) {
+    console.log('SUCCESS in render result checked input');
+    els.feedback.textContent = '';
     els.feedback.classList.remove('text-danger');
-    els.feedback.classList.add('text-success');
     els.input.classList.remove('is-invalid');
+    els.feedback.classList.add('text-success');
   } else {
-    console.log('ERROR in renderInput');
+    console.log('ERROR in renderResultCheckedInput');
+    els.feedback.textContent = i18next.t(`feedback.${state.form.error}`);
     els.input.classList.add('is-invalid');
     els.feedback.classList.add('text-danger');
     els.feedback.classList.remove('text-success');
   }
-
 };
 
 // РЕЗУЛЬТАТ
-const renderResult = (els, val, state, i18next) => {
+const renderResult = (els, state, i18next) => {
   console.log('GOOD');
-  // Рисуем колонку с постами. Заголовок Посты
+  renderResultCheckedInput(els, state, i18next);
+
+  // Блокируем кнопку на время загрузки данных
+  if (state.loadingProccess.status === 'load') {
+    console.log('LOAD');
+    els.input.value = '';
+    els.btnPrimary.disabled = true;
+  };
+
+  if (state.loadingProccess.status === 'error') {
+    console.log('error in loading');
+  }
+
+  if (state.loadingProccess.status === 'success') {
+    // Рисуем колонку с постами. Заголовок Посты
+  els.posts.innerHTML = '';
   const divCardPost = document.createElement('div');
   divCardPost.classList.add('card', 'border-0');
   els.posts.append(divCardPost);
@@ -43,15 +60,15 @@ const renderResult = (els, val, state, i18next) => {
   // Рисуем список из постов
   const ulPosts = document.createElement('ul');
   ulPosts.classList.add('list-group', 'border-0', 'rounded-0');
-  const arrPosts = [{ namePost: 'Пост о чем-то важном', href: '#' }, { namePost: 'Еще один важный пост', href: '#' }, { namePost: 'Последний пост о котиках', href: '#' }];
-  const listPost = arrPosts.map((post) => {
+  // const arrPosts = [{ namePost: 'Пост о чем-то важном', href: '#' }, { namePost: 'Еще один важный пост', href: '#' }, { namePost: 'Последний пост о котиках', href: '#' }];
+  const listPost = state.dataPosts.listPosts.map((post) => {
     const li = document.createElement('li');
     li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
     const link = document.createElement('a');
     link.classList.add('fw-bold');
-    link.setAttribute('href', post.href);
+    link.setAttribute('href', post.linkPost);
     link.setAttribute('target', '_blank');
-    link.textContent = post.namePost;
+    link.textContent = post.titlePost;
     li.append(link);
     const button = document.createElement('button');
     button.setAttribute('type', 'button');
@@ -65,6 +82,7 @@ const renderResult = (els, val, state, i18next) => {
   divCardBodyPosts.append(ulPosts);
 
   // Рисуем колонку с фидами. Заголовок Фиды.
+  els.feeds.innerHTML = '';
   const divCardFeeds = document.createElement('div');
   divCardFeeds.classList.add('card', 'border-0');
   els.feeds.append(divCardFeeds);
@@ -79,66 +97,43 @@ const renderResult = (els, val, state, i18next) => {
   // Рисуем список фидов
   const ulFeeds = document.createElement('ul');
   ulFeeds.classList.add('list-group', 'border-0', 'rounded-0');
-  const arrFeeds = [
-    {
-      link: 'https://aljazeera.com/xml/rss/all.xml',
-      feed: { nameFeed: 'Что-то о чем-то', describeFeed: 'Что-то с чем-то' },
-    },
-    {
-      link: 'https://thecipherbrief.com/feed',
-      feed: { nameFeed: 'Котиков все любят', describeFeed: 'А кто не любит, тот дурак' },
-    },
-  ];
-  arrFeeds.map(({ nameFeed, describeFeed }) => {
+  state.dataFeeds.map((feed) => {
     const li = document.createElement('li');
     li.classList.add('list-group-item', 'border-0', 'border-end-0');
     const headerFeed = document.createElement('h3');
     headerFeed.classList.add('h6', 'm-0');
-    headerFeed.textContent = nameFeed;
+    headerFeed.textContent = feed.titleFeed;
     const textFeed = document.createElement('p');
     textFeed.classList.add('m-0', 'small', 'text-black-50');
-    textFeed.textContent = describeFeed;
+    textFeed.textContent = feed.descriptionFeed;
     li.append(headerFeed);
     li.append(textFeed);
     ulFeeds.append(li);
   });
   divCardBodyFeeds.append(ulFeeds);
-
-  renderInput(els, state, i18next);
+  els.btnPrimary.disabled = false;
+  els.feedback.textContent = i18next.t('feedback.success');
 };
+}
 
-// ОШИБКИ
-const renderError = (els, val, state, i18next) => {
-  console.log('VAL in renderError  ', val);
+export default (elements, state, i18next) => {
+  const watchedState = onChange(state, (path, value) => {
+    console.log('STATE  ', state);
+    console.log('PATH, value in render ', path, value);
+    renderContentPage(elements, i18next);
 
-  // Нет ошибки
-  if (val === '') {
-    renderInput(els, state);
-  }
+    switch (path) {
+      case 'form.error':
+        console.log('render error');
+        renderResultCheckedInput(elements, state, i18next);
+        break;
 
-  // Есть ошибка
-  if (val !== '') {
-    els.feedback.textContent = i18next.t(`feedback.${state.form.error}`);
-    renderInput(els, state);
-  }
-};
+      case 'loadingProccess.status': renderResult(elements, state, i18next);
 
-export default (elements, state, i18next) => (path, value) => {
-  console.log('STATE  ', state);
-  console.log('PATH, value in render ', path, value);
-  renderContentPage(elements, i18next);
+      default: 'error';
+        break;
+    }
+  });
 
-  switch (path) {
-    case 'form.error':
-      renderError(elements, value, state, i18next);
-      break;
-
-    case 'form':
-      console.log('path in inputUi  ', path);
-      renderResult(elements, value, state, i18next);
-      break;
-
-    default: 'error';
-      break;
-  }
+  return watchedState;
 };
