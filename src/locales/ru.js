@@ -15,6 +15,8 @@ export default {
       success: 'RSS успешно загружен',
       doubleUrl: 'RSS уже существует',
       falseUrl: 'Ссылка должна быть валидным URL',
+      noRss: 'Ресурс не содержит валидный RSS',
+      abortError: 'Ошибка сети',
     },
 
   },

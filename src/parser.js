@@ -5,9 +5,9 @@ export default (data) => {
   const parser = new DOMParser();
   const parserData = parser.parseFromString(data.contents, "application/xml");
   console.log('PARSER data  ', parserData);
-  const rss = parserData.querySelector('rss');
-  console.log('rss  ', rss);
-  if (rss === null) {
+  const parserError = parserData.querySelector('parsererror');
+  console.log('parsererror  ', parserError);
+  if (parserError) {
     throw new Error('noRss');
   } else {
     const titleFeed = parserData.querySelector('title').textContent;

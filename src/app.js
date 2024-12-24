@@ -109,12 +109,15 @@ export default () => {
         initialState.form.isValid = false;
         state.form.error = 'doubleUrl';
       } else {
-        initialState.form.isValid = true;
-        state.loadingProccess.status = 'load';
-        const responseUrl = fetch(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
+        let controller = new AbortController();
+        setTimeout(() => controller.abort(), 10000);
+        const proxy = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
+        fetch(proxy, { signal: controller.signal })
         .then((response) => response.json())
         .then((data) => parser(data))
         .then(({ feed, posts }) => {
+          initialState.form.isValid = true;
+          state.loadingProccess.status = 'load';
           feed.idFeed = uniqueId('feed_');
           posts.map((post) => {
             post.idFeed = feed.idFeed;
@@ -126,7 +129,15 @@ export default () => {
           // setInterval(upgradePosts(initialState), 10000);
         })
         .catch((error) => {
-          console.log(error);
+          console.log('error in catch  ', error);
+          initialState.form.isValid = false;
+          if (error.message === 'noRss') {
+            state.form.error = error.message;
+          }
+          
+          if (error.name === 'AbortError') {
+            state.form.error = 'abortError';
+          }
         });
       };
     }
