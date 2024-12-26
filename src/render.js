@@ -1,7 +1,6 @@
 import onChange from 'on-change';
 
 const renderContentPage = (els, i18next) => {
-  // console.log('render start page  ', els);
   els.headerPage.textContent = i18next.t('contentPage.headerPage');
   els.preheader.textContent = i18next.t('contentPage.preheader');
   els.placeholder.textContent = i18next.t('contentPage.placeholder');
@@ -13,13 +12,13 @@ const renderContentPage = (els, i18next) => {
 // ИНПУТ
 const renderResultCheckedInput = (els, state, i18next) => {
   if (state.form.isValid === true) {
-    console.log('SUCCESS in render result checked input');
+    // console.log('SUCCESS in render result checked input');
     els.feedback.textContent = '';
     els.feedback.classList.remove('text-danger');
     els.input.classList.remove('is-invalid');
     els.feedback.classList.add('text-success');
   } else {
-    console.log('ERROR in renderResultCheckedInput');
+    // console.log('ERROR in renderResultCheckedInput');
     els.feedback.textContent = i18next.t(`feedback.${state.form.error}`);
     els.input.classList.add('is-invalid');
     els.feedback.classList.add('text-danger');
@@ -29,19 +28,14 @@ const renderResultCheckedInput = (els, state, i18next) => {
 
 // РЕЗУЛЬТАТ
 const renderResult = (els, state, i18next) => {
-  console.log('GOOD');
   renderResultCheckedInput(els, state, i18next);
 
   // Блокируем кнопку на время загрузки данных
   if (state.loadingProccess.status === 'load') {
-    console.log('LOAD');
+    // console.log('LOAD');
     els.input.value = '';
     els.btnPrimary.disabled = true;
   };
-
-  if (state.loadingProccess.status === 'error') {
-    console.log('error in loading');
-  }
 
   if (state.loadingProccess.status === 'success') {
     // Рисуем колонку с постами. Заголовок Посты
@@ -60,9 +54,10 @@ const renderResult = (els, state, i18next) => {
   // Рисуем список из постов
   const ulPosts = document.createElement('ul');
   ulPosts.classList.add('list-group', 'border-0', 'rounded-0');
-  // const arrPosts = [{ namePost: 'Пост о чем-то важном', href: '#' }, { namePost: 'Еще один важный пост', href: '#' }, { namePost: 'Последний пост о котиках', href: '#' }];
-  const listPost = state.dataPosts.listPosts.map((post) => {
+  state.dataPosts.listPosts.map((post) => {
+    console.log('post id  ', post.idPost);
     const li = document.createElement('li');
+    li.setAttribute('id', post.idPost);
     li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
     const link = document.createElement('a');
     link.classList.add('fw-bold');
@@ -116,19 +111,51 @@ const renderResult = (els, state, i18next) => {
 };
 }
 
+// АПГРЕЙД
+const renderUpgrade = (els, state, i18next) => {
+  const listPosts = document.querySelector('ul.list-group');
+  const oldPosts = document.querySelectorAll('li.post-');
+  console.log('old posts in upgrade  ', oldPosts);
+  const newPostsForUpgrade = state.dataPosts.listPosts.filter((post) => {
+    
+  });
+  state.dataPosts.newPostsForUpgrade.map((post) => {
+    const li = document.createElement('li');
+    li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
+    const link = document.createElement('a');
+    link.classList.add('fw-bold');
+    link.setAttribute('href', post.linkPost);
+    link.setAttribute('target', '_blank');
+    link.textContent = post.titlePost;
+    li.append(link);
+    const button = document.createElement('button');
+    button.setAttribute('type', 'button');
+    button.setAttribute('data-bs-toggle', 'modal');
+    button.setAttribute('data-bs-target', '#modal');
+    button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
+    button.textContent = i18next.t('contentPage.buttonPostWatch');
+    li.append(button);
+    listPosts.prepend(li);
+  });
+
+}
+
 export default (elements, state, i18next) => {
   const watchedState = onChange(state, (path, value) => {
-    console.log('STATE  ', state);
-    console.log('PATH, value in render ', path, value);
+    console.log('STATE in render start ', state);
+    // console.log('PATH, value in render ', path, value);
     renderContentPage(elements, i18next);
 
     switch (path) {
       case 'form.error':
-        console.log('render error');
         renderResultCheckedInput(elements, state, i18next);
         break;
 
       case 'loadingProccess.status': renderResult(elements, state, i18next);
+      break;
+
+      case 'dataPosts.statusUpgrade': renderUpgrade(elements, state, i18next);
+      break;
 
       default: 'error';
         break;

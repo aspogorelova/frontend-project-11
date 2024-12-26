@@ -57,6 +57,8 @@ export default () => {
     dataPosts: { // [{ idFeed, idPost, titlePost, descriptionPost, linkPost }]
       listPosts: [],
       openedPosts: [],
+      statusUpgrade: 'success',
+      newPostsForUpgrade: [],
     },
     dataFeeds: [], // [{ idFeed, titleFeed, descriptionFeed, linkFeed }]
   };
@@ -73,18 +75,38 @@ export default () => {
   const state = render(elements, initialState, i18nextInstance);
 
   // Функция обновления постов
-  const upgradePosts = (initialState) => {
-    console.log('START UPGRADE', initialState.dataFeeds);
-    state.dataFeeds.map(({ idFeed, linkFeed }) => {
-      fetch(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(linkFeed)}`)
-        .then((response) => response.json)
-        .then((data) => parser(data))
-        .then(({ feed, posts }) => {
-          console.log('FEED in upgrade  ', feed);
-          console.log('POSTS in upgrade  ', posts);
-        })      
-    });
+  const upgradePosts = (state, initialState) => {
+    if (initialState.dataFeeds.length > 0) {
+      initialState.dataPosts.statusUpgrade = 'check';
+      initialState.dataFeeds.map(({ linkFeed }) => {
+        let controller = new AbortController();
+        setTimeout(() => controller.abort(), 5000);
+        const url = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(linkFeed)}`;
+        fetch(url, { signal: controller.signal })
+          .then((response) => response.json())
+          .then((data) => parser(data))
+          .then(({ feed, posts }) => {
+            // Определяем старые посты по linkPost
+            const linksOldPosts = initialState.dataPosts.listPosts.map(({ linkPost }) => linkPost);
+            const newPosts = posts.filter((post) => {
+              const linkPost = post.linkPost;
+              if (!linksOldPosts.includes(linkPost)) {
+                post.idFeed = feed.idFeed;
+                post.idPost = uniqueId('post_');
+                return post;
+              }
+            });
+            initialState.dataPosts.newPostsForUpgrade = initialState.dataPosts.listPosts.concat(newPosts);
+            state.dataPosts.statusUpgrade = 'success';
+          })
+          .catch((e) => console.log(e));
+      });
+    }
+
+    setTimeout(upgradePosts, 5000, state, initialState);
   };
+
+  upgradePosts(state, initialState);
 
   // Событие при клике
   elements.form.addEventListener('submit', (e) => {
@@ -102,7 +124,7 @@ export default () => {
       initialState.form.isValid = checkError;
       state.form.error = String(checkUrl);
     };
-    
+
     if (checkError === true) {
       initialState.form.error = '';
       if (checkDubleLink) {
@@ -113,32 +135,31 @@ export default () => {
         setTimeout(() => controller.abort(), 10000);
         const proxy = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
         fetch(proxy, { signal: controller.signal })
-        .then((response) => response.json())
-        .then((data) => parser(data))
-        .then(({ feed, posts }) => {
-          initialState.form.isValid = true;
-          state.loadingProccess.status = 'load';
-          feed.idFeed = uniqueId('feed_');
-          posts.map((post) => {
-            post.idFeed = feed.idFeed;
+          .then((response) => response.json())
+          .then((data) => parser(data))
+          .then(({ feed, posts }) => {
+            initialState.form.isValid = true;
+            state.loadingProccess.status = 'load';
+            feed.idFeed = uniqueId('feed_');
+            posts.map((post) => {
+              post.idFeed = feed.idFeed;
+              post.idPost = uniqueId('post_');
+            });
+            initialState.dataFeeds = initialState.dataFeeds.concat(feed);
+            initialState.dataPosts.listPosts = initialState.dataPosts.listPosts.concat(posts);
+            state.loadingProccess.status = 'success';
+            // console.log('initial state after add new feed and posts  ', initialState);
+          })
+          .catch((error) => {
+            initialState.form.isValid = false;
+            if (error.message !== 'AbortError') {
+              state.form.error = error.message;
+            }
+
+            if (error.name === 'AbortError') {
+              state.form.error = 'abortError';
+            }
           });
-          initialState.dataFeeds = initialState.dataFeeds.concat(feed);
-          initialState.dataPosts.listPosts = initialState.dataPosts.listPosts.concat(posts);
-          state.loadingProccess.status = 'success';
-          console.log('initial state after add new feed and posts  ', initialState);
-          // setInterval(upgradePosts(initialState), 10000);
-        })
-        .catch((error) => {
-          console.log('error in catch  ', error);
-          initialState.form.isValid = false;
-          if (error.message === 'noRss') {
-            state.form.error = error.message;
-          }
-          
-          if (error.name === 'AbortError') {
-            state.form.error = 'abortError';
-          }
-        });
       };
     }
   });
