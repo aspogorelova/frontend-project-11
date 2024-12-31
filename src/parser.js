@@ -1,9 +1,7 @@
-import { uniqueId } from "lodash";
-
 export default (data) => {
-  console.log('DATA in parser  ', data);
+  // console.log('DATA in parser  ', data);
   const parser = new DOMParser();
-  const parserData = parser.parseFromString(data.contents, "application/xml");
+  const parserData = parser.parseFromString(data.contents, 'application/xml');
   const parserError = parserData.querySelector('parsererror');
   if (parserError) {
     throw new Error('noRss');
@@ -17,11 +15,9 @@ export default (data) => {
         const titlePost = post.querySelector('title').textContent;
         const descriptionPost = post.querySelector('description').textContent;
         const linkPost = post.querySelector('link').textContent;
-        // const idPost = uniqueId('post_');
         return { titlePost, descriptionPost, linkPost };
       });
-  
-    
-    return { feed, posts }
+
+    return { feed, posts };
   }
 };
