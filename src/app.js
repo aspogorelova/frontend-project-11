@@ -34,6 +34,7 @@ export default () => {
   const elements = {
     input: document.querySelector('input.form-control'),
     btnPrimary: document.querySelector('button.btn-primary'),
+    btnModal: document.querySelectorAll('button[data-bs-target="#modal"]'),
     form: document.querySelector('form.rss-form'),
     feedback: document.querySelector('p.feedback'),
     example: document.querySelector('p.text-muted'),
@@ -72,6 +73,10 @@ export default () => {
   elements.footer.innerHTML = i18nextInstance.t('contentPage.footer');
 
   const state = render(elements, initialState, i18nextInstance);
+  const divModal = document.querySelector('div.modal');
+  console.log('MODAL  ', divModal);
+  divModal.setAttribute('aria-hidden', false);
+  divModal.setAttribute('inert', '');
 
   // Функция обновления постов
   const upgradePosts = (state, initialState) => {
@@ -158,4 +163,12 @@ export default () => {
       }
     }
   });
+
+  // Событие при клике по кнопке Просмотр поста
+  elements.btnModal.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      console.log('click btn modal  ', btn);
+    })
+  });
+
 };

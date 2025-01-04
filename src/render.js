@@ -108,8 +108,8 @@ const renderResult = (els, state, i18next) => {
 
 export default (elements, state, i18next) => {
   const watchedState = onChange(state, (path, value) => {
-    console.log('STATE in render start ', state);
-    console.log('PATH, value in render ', path, value);
+    // console.log('STATE in render start ', state);
+    // console.log('PATH, value in render ', path, value);
     renderContentPage(elements, i18next);
 
     switch (path) {
