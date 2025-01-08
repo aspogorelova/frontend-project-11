@@ -33,8 +33,8 @@ export default () => {
 
   const elements = {
     input: document.querySelector('input.form-control'),
+    btns: document.querySelectorAll('button'),
     btnPrimary: document.querySelector('button.btn-primary'),
-    btnModal: document.querySelectorAll('button[data-bs-target="#modal"]'),
     form: document.querySelector('form.rss-form'),
     feedback: document.querySelector('p.feedback'),
     example: document.querySelector('p.text-muted'),
@@ -74,7 +74,6 @@ export default () => {
 
   const state = render(elements, initialState, i18nextInstance);
   const divModal = document.querySelector('div.modal');
-  console.log('MODAL  ', divModal);
   divModal.setAttribute('aria-hidden', false);
   divModal.setAttribute('inert', '');
 
@@ -110,65 +109,67 @@ export default () => {
   upgradePosts(state, initialState);
 
   // Событие при клике
-  elements.form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const url = formData.get('url');
-    // Проверяем правильная ссылка или нет
-    const checkUrl = validate(url);
-    const checkError = isEmpty(checkUrl);
-    // Проверяем есть ли ссылка среди фидов
-    const arrLinksFeed = initialState.dataFeeds.map(({ linkFeed }) => linkFeed);
-    const checkDubleLink = arrLinksFeed.includes(url);
+  elements.btns.forEach((btn) => {
+    console.log('one btn  ', btn);
+    btn.addEventListener('submit', (e) => {
+      e.preventDefault();
+      console.log('CLICK BTN');
+      if (e.target === elements.btnPrimary) {
+        console.log('e.target.closest(form)  ', e.target.closest('form'));
+        console.log('elements.form  ', elements.form);
 
-    if (checkError === false) {
-      initialState.form.isValid = checkError;
-      state.form.error = String(checkUrl);
-    }
+        const formData = new FormData(e.target.closest('form'));
+        const url = formData.get('url');
+        const checkUrl = validate(url);
+        const checkError = isEmpty(checkUrl);
+        const arrLinksFeed = initialState.dataFeeds.map(({ linkFeed }) => linkFeed);
+        const checkDubleLink = arrLinksFeed.includes(url);
 
-    if (checkError === true) {
-      initialState.form.error = '';
-      if (checkDubleLink) {
-        initialState.form.isValid = false;
-        state.form.error = 'doubleUrl';
-      } else {
-        const controller = new AbortController();
-        setTimeout(() => controller.abort(), 10000);
-        const proxy = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
-        fetch(proxy, { signal: controller.signal })
-          .then((response) => response.json())
-          .then((data) => parser(data))
-          .then(({ feed, posts }) => {
-            initialState.form.isValid = true;
-            state.loadingProccess.status = 'load';
-            feed.idFeed = uniqueId('feed_');
-            initialState.dataFeeds.push(feed);
-            posts.map((post) => {
-              post.idFeed = feed.idFeed;
-              post.idPost = uniqueId('post_');
-              initialState.dataPosts.listPosts.unshift(post);
-            });
-            state.loadingProccess.status = 'success';
-          })
-          .catch((error) => {
+        if (checkError === false) {
+          initialState.form.isValid = checkError;
+          state.form.error = String(checkUrl);
+        }
+
+        if (checkError === true) {
+          initialState.form.error = '';
+          if (checkDubleLink) {
             initialState.form.isValid = false;
-            if (error.message !== 'AbortError') {
-              state.form.error = error.message;
-            }
+            state.form.error = 'doubleUrl';
+          } else {
+            const controller = new AbortController();
+            setTimeout(() => controller.abort(), 10000);
+            const proxy = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
+            fetch(proxy, { signal: controller.signal })
+              .then((response) => response.json())
+              .then((data) => parser(data))
+              .then(({ feed, posts }) => {
+                initialState.form.isValid = true;
+                state.loadingProccess.status = 'load';
+                feed.idFeed = uniqueId('feed_');
+                initialState.dataFeeds.push(feed);
+                posts.map((post) => {
+                  post.idFeed = feed.idFeed;
+                  post.idPost = uniqueId('post_');
+                  initialState.dataPosts.listPosts.unshift(post);
+                });
+                state.loadingProccess.status = 'success';
+              })
+              .catch((error) => {
+                initialState.form.isValid = false;
+                if (error.message !== 'AbortError') {
+                  state.form.error = error.message;
+                }
 
-            if (error.name === 'AbortError') {
-              state.form.error = 'abortError';
-            }
-          });
+                if (error.name === 'AbortError') {
+                  state.form.error = 'abortError';
+                }
+              });
+          }
+        }
       }
-    }
+    });
   });
 
-  // Событие при клике по кнопке Просмотр поста
-  elements.btnModal.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      console.log('click btn modal  ', btn);
-    })
-  });
+
 
 };
