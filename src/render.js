@@ -51,11 +51,17 @@ const renderResult = (els, state, i18next) => {
     // Рисуем список из постов
     const ulPosts = document.createElement('ul');
     ulPosts.classList.add('list-group', 'border-0', 'rounded-0');
-    state.dataPosts.listPosts.map((post) => {
+    state.dataPosts.listPosts.forEach((post) => {
       const li = document.createElement('li');
+      li.setAttribute('id', post.idPost);
       li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
       const link = document.createElement('a');
-      link.classList.add('fw-bold');
+      if (Array.from(state.dataPosts.openedPosts).includes(post.idPost)) {
+        link.classList.add('fw-normal');
+        link.style.color = 'grey';
+      } else {
+        link.classList.add('fw-bold');
+      }
       link.setAttribute('href', post.linkPost);
       link.setAttribute('target', '_blank');
       link.textContent = post.titlePost;
@@ -64,6 +70,7 @@ const renderResult = (els, state, i18next) => {
       button.setAttribute('type', 'button');
       button.setAttribute('data-bs-toggle', 'modal');
       button.setAttribute('data-bs-target', '#modal');
+      // button.setAttribute('id', post.idPost);
       button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
       button.textContent = i18next.t('contentPage.buttonPostWatch');
       li.append(button);
@@ -87,7 +94,7 @@ const renderResult = (els, state, i18next) => {
     // Рисуем список фидов
     const ulFeeds = document.createElement('ul');
     ulFeeds.classList.add('list-group', 'border-0', 'rounded-0');
-    state.dataFeeds.map((feed) => {
+    state.dataFeeds.forEach((feed) => {
       const li = document.createElement('li');
       li.classList.add('list-group-item', 'border-0', 'border-end-0');
       const headerFeed = document.createElement('h3');
@@ -106,10 +113,19 @@ const renderResult = (els, state, i18next) => {
   }
 };
 
+// МОДАЛЬНОЕ ОКНО
+const renderModal = (els, state) => {
+  state.dataPosts.listPosts.forEach((post) => {
+    if (post.idPost === state.dataPosts.idCurrentPost) {
+      els.modalTitle.textContent = post.titlePost;
+      els.modalBody.textContent = post.descriptionPost;
+      els.btnReadPost.setAttribute('href', `${post.linkPost}`);
+    }
+  });
+};
+
 export default (elements, state, i18next) => {
-  const watchedState = onChange(state, (path, value) => {
-    // console.log('STATE in render start ', state);
-    // console.log('PATH, value in render ', path, value);
+  const watchedState = onChange(state, (path) => {
     renderContentPage(elements, i18next);
 
     switch (path) {
@@ -121,6 +137,12 @@ export default (elements, state, i18next) => {
         break;
 
       case 'dataPosts.statusUpgrade': renderResult(elements, state, i18next);
+        break;
+
+      case 'dataPosts.idCurrentPost': renderModal(elements, state);
+        break;
+
+      case 'dataPosts.openedPosts': renderResult(elements, state, i18next);
         break;
 
       default: console.log('error');

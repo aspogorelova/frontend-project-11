@@ -44,6 +44,9 @@ export default () => {
     preheader: document.querySelector('p.lead'),
     placeholder: document.querySelector('label[for="url-input"]'),
     footer: document.querySelector('div.text-center'),
+    modalTitle: document.querySelector('.modal-title'),
+    modalBody: document.querySelector('.modal-body'),
+    btnReadPost: document.querySelector('a.btn.btn-primary.full-article'),
   };
 
   const initialState = {
@@ -57,7 +60,8 @@ export default () => {
     },
     dataPosts: { // [{ idFeed, idPost, titlePost, descriptionPost, linkPost }]
       listPosts: [],
-      openedPosts: [],
+      openedPosts: new Set(),
+      idCurrentPost: '',
       statusUpgrade: 'success',
     },
     dataFeeds: [], // [{ idFeed, titleFeed, descriptionFeed, linkFeed }]
@@ -73,15 +77,12 @@ export default () => {
   elements.footer.innerHTML = i18nextInstance.t('contentPage.footer');
 
   const state = render(elements, initialState, i18nextInstance);
-  const divModal = document.querySelector('div.modal');
-  divModal.setAttribute('aria-hidden', false);
-  divModal.setAttribute('inert', '');
 
   // Функция обновления постов
-  const upgradePosts = (state, initialState) => {
-    if (initialState.dataFeeds.length > 0) {
-      initialState.dataPosts.statusUpgrade = 'check';
-      initialState.dataFeeds.map(({ idFeed, linkFeed }) => {
+  const upgradePosts = (stateUp, initialStateUp) => {
+    if (initialStateUp.dataFeeds.length > 0) {
+      initialStateUp.dataPosts.statusUpgrade = 'check';
+      initialStateUp.dataFeeds.forEach(({ idFeed, linkFeed }) => {
         const controller = new AbortController();
         setTimeout(() => controller.abort(), 5000);
         const url = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(linkFeed)}`;
@@ -89,13 +90,13 @@ export default () => {
           .then((response) => response.json())
           .then((data) => parser(data))
           .then(({ posts }) => {
-            const oldPosts = initialState.dataPosts.listPosts.map(({ linkPost }) => linkPost);
-            posts.filter((post) => {
+            const oldPosts = initialStateUp.dataPosts.listPosts.map(({ linkPost }) => linkPost);
+            posts.forEach((post) => {
               if (!oldPosts.includes(post.linkPost)) {
                 post.idFeed = idFeed;
                 post.idPost = uniqueId('post_');
-                initialState.dataPosts.listPosts.unshift(post);
-                state.dataPosts.statusUpgrade = 'success';
+                initialStateUp.dataPosts.listPosts.unshift(post);
+                stateUp.dataPosts.statusUpgrade = 'success';
               }
             });
           })
@@ -109,67 +110,65 @@ export default () => {
   upgradePosts(state, initialState);
 
   // Событие при клике
-  elements.btns.forEach((btn) => {
-    console.log('one btn  ', btn);
-    btn.addEventListener('submit', (e) => {
-      e.preventDefault();
-      console.log('CLICK BTN');
-      if (e.target === elements.btnPrimary) {
-        console.log('e.target.closest(form)  ', e.target.closest('form'));
-        console.log('elements.form  ', elements.form);
+  elements.form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const url = formData.get('url');
+    const checkUrl = validate(url);
+    const checkError = isEmpty(checkUrl);
+    const arrLinksFeed = initialState.dataFeeds.map(({ linkFeed }) => linkFeed);
+    const checkDubleLink = arrLinksFeed.includes(url);
 
-        const formData = new FormData(e.target.closest('form'));
-        const url = formData.get('url');
-        const checkUrl = validate(url);
-        const checkError = isEmpty(checkUrl);
-        const arrLinksFeed = initialState.dataFeeds.map(({ linkFeed }) => linkFeed);
-        const checkDubleLink = arrLinksFeed.includes(url);
+    if (checkError === false) {
+      initialState.form.isValid = checkError;
+      state.form.error = String(checkUrl);
+    }
 
-        if (checkError === false) {
-          initialState.form.isValid = checkError;
-          state.form.error = String(checkUrl);
-        }
-
-        if (checkError === true) {
-          initialState.form.error = '';
-          if (checkDubleLink) {
+    if (checkError === true) {
+      initialState.form.error = '';
+      if (checkDubleLink) {
+        initialState.form.isValid = false;
+        state.form.error = 'doubleUrl';
+      } else {
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), 10000);
+        const proxy = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
+        fetch(proxy, { signal: controller.signal })
+          .then((response) => response.json())
+          .then((data) => parser(data))
+          .then(({ feed, posts }) => {
+            initialState.form.isValid = true;
+            state.loadingProccess.status = 'load';
+            feed.idFeed = uniqueId('feed_');
+            initialState.dataFeeds.push(feed);
+            posts.forEach((post) => {
+              post.idFeed = feed.idFeed;
+              post.idPost = uniqueId('post_');
+              initialState.dataPosts.listPosts.unshift(post);
+            });
+            state.loadingProccess.status = 'success';
+          })
+          .catch((error) => {
             initialState.form.isValid = false;
-            state.form.error = 'doubleUrl';
-          } else {
-            const controller = new AbortController();
-            setTimeout(() => controller.abort(), 10000);
-            const proxy = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
-            fetch(proxy, { signal: controller.signal })
-              .then((response) => response.json())
-              .then((data) => parser(data))
-              .then(({ feed, posts }) => {
-                initialState.form.isValid = true;
-                state.loadingProccess.status = 'load';
-                feed.idFeed = uniqueId('feed_');
-                initialState.dataFeeds.push(feed);
-                posts.map((post) => {
-                  post.idFeed = feed.idFeed;
-                  post.idPost = uniqueId('post_');
-                  initialState.dataPosts.listPosts.unshift(post);
-                });
-                state.loadingProccess.status = 'success';
-              })
-              .catch((error) => {
-                initialState.form.isValid = false;
-                if (error.message !== 'AbortError') {
-                  state.form.error = error.message;
-                }
+            if (error.message !== 'AbortError') {
+              state.form.error = error.message;
+            }
 
-                if (error.name === 'AbortError') {
-                  state.form.error = 'abortError';
-                }
-              });
-          }
-        }
+            if (error.name === 'AbortError') {
+              state.form.error = 'abortError';
+            }
+          });
       }
-    });
+    }
   });
 
-
-
+  // Клик по диву с постами
+  elements.posts.addEventListener('click', (e) => {
+    const idOpenedPost = e.target.closest('li').getAttribute('id');
+    state.dataPosts.openedPosts.add(idOpenedPost);
+    if (e.target.tagName === 'BUTTON') {
+      e.preventDefault();
+      state.dataPosts.idCurrentPost = idOpenedPost;
+    }
+  });
 };
