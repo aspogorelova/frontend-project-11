@@ -2,3 +2,6 @@ node_modules
 dist
 .vscode
 hexlet-allorigins
+tests
+tests-examples
+playwright.config.js
