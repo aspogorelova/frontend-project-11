@@ -151,7 +151,11 @@ export default () => {
           })
           .catch((error) => {
             initialState.form.isValid = false;
-            state.form.error = 'abortError';
+            if (error.message === 'noRss') {
+              state.form.error = 'noRss';
+            } else {
+              state.form.error = 'abortError';
+            }
           });
       }
     }
