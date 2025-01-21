@@ -151,13 +151,7 @@ export default () => {
           })
           .catch((error) => {
             initialState.form.isValid = false;
-            if (error.message !== 'AbortError') {
-              state.form.error = error.message;
-            }
-
-            if (error.name === 'AbortError') {
-              state.form.error = 'abortError';
-            }
+            state.form.error = 'abortError';
           });
       }
     }
