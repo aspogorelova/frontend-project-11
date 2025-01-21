@@ -116,8 +116,9 @@ export default () => {
     const url = formData.get('url');
     const checkUrl = validate(url);
     const checkError = isEmpty(checkUrl);
-    const arrLinksFeed = initialState.dataFeeds.map(({ linkFeed }) => linkFeed);
+    const arrLinksFeed = initialState.dataFeeds.map(({ url }) => url);
     const checkDubleLink = arrLinksFeed.includes(url);
+
 
     if (checkError === false) {
       initialState.form.isValid = checkError;
