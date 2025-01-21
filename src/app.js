@@ -131,7 +131,7 @@ export default () => {
         state.form.error = 'doubleUrl';
       } else {
         const controller = new AbortController();
-        setTimeout(() => controller.abort(), 10000);
+        setTimeout(() => controller.abort(), 5000);
         const proxy = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
         fetch(proxy, { signal: controller.signal })
           .then((response) => response.json())
