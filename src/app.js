@@ -135,7 +135,7 @@ export default () => {
         const proxy = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
         fetch(proxy, { signal: controller.signal })
           .then((response) => response.json())
-          .then((data) => parser(data))
+          .then((data) => parser(data, url))
           .then(({ feed, posts }) => {
             initialState.form.isValid = true;
             state.loadingProccess.status = 'load';
