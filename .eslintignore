@@ -5,3 +5,4 @@ hexlet-allorigins
 tests
 tests-examples
 playwright.config.js
+demo-todo-app.spec.js
