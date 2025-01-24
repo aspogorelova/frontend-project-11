@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import i18next from 'i18next';
 import * as yup from 'yup';
 import { isEmpty, uniqueId } from 'lodash';
@@ -117,10 +118,7 @@ export default () => {
     const checkUrl = validate(url);
     const checkError = isEmpty(checkUrl);
     const arrLinksFeed = initialState.dataFeeds.map(({ linkFeed }) => linkFeed);
-    console.log('arr links feed  ', initialState);
     const checkDubleLink = arrLinksFeed.includes(url);
-    console.log('check double links  ', checkDubleLink);
-
 
     if (checkError === false) {
       initialState.form.isValid = checkError;

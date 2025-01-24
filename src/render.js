@@ -1,45 +1,40 @@
 import onChange from 'on-change';
 
-const renderContentPage = (els, i18next) => {
-  els.headerPage.textContent = i18next.t('contentPage.headerPage');
-  els.preheader.textContent = i18next.t('contentPage.preheader');
-  els.placeholder.textContent = i18next.t('contentPage.placeholder');
-  els.btnPrimary.textContent = i18next.t('contentPage.button');
-  els.example.textContent = i18next.t('contentPage.example');
-  els.footer.innerHTML = i18next.t('contentPage.footer');
-};
-
 // ИНПУТ
 const renderResultCheckedInput = (els, state, i18next) => {
+  const { feedback, input } = els;
   if (state.form.isValid === true) {
-    els.feedback.textContent = '';
-    els.feedback.classList.remove('text-danger');
-    els.input.classList.remove('is-invalid');
-    els.feedback.classList.add('text-success');
+    feedback.textContent = '';
+    feedback.classList.remove('text-danger');
+    input.classList.remove('is-invalid');
+    feedback.classList.add('text-success');
   } else {
-    els.feedback.textContent = i18next.t(`feedback.${state.form.error}`);
-    els.input.classList.add('is-invalid');
-    els.feedback.classList.add('text-danger');
-    els.feedback.classList.remove('text-success');
+    feedback.textContent = i18next.t(`feedback.${state.form.error}`);
+    input.classList.add('is-invalid');
+    feedback.classList.add('text-danger');
+    feedback.classList.remove('text-success');
   }
 };
 
 // РЕЗУЛЬТАТ
 const renderResult = (els, state, i18next) => {
   renderResultCheckedInput(els, state, i18next);
+  const {
+    input, btnPrimary, posts, feeds, feedback,
+  } = els;
 
   // Блокируем кнопку на время загрузки данных
   if (state.loadingProccess.status === 'load') {
-    els.input.value = '';
-    els.btnPrimary.disabled = true;
+    input.value = '';
+    btnPrimary.disabled = true;
   }
 
   if (state.loadingProccess.status || state.dataPosts.statusUpgrade === 'success') {
     // Рисуем колонку с постами. Заголовок Посты
-    els.posts.innerHTML = '';
+    posts.innerHTML = '';
     const divCardPost = document.createElement('div');
     divCardPost.classList.add('card', 'border-0');
-    els.posts.append(divCardPost);
+    posts.append(divCardPost);
     const divCardBodyPosts = document.createElement('div');
     divCardBodyPosts.classList.add('card-body');
     divCardPost.append(divCardBodyPosts);
@@ -79,10 +74,10 @@ const renderResult = (els, state, i18next) => {
     divCardBodyPosts.append(ulPosts);
 
     // Рисуем колонку с фидами. Заголовок Фиды.
-    els.feeds.innerHTML = '';
+    feeds.innerHTML = '';
     const divCardFeeds = document.createElement('div');
     divCardFeeds.classList.add('card', 'border-0');
-    els.feeds.append(divCardFeeds);
+    feeds.append(divCardFeeds);
     const divCardBodyFeeds = document.createElement('div');
     divCardBodyFeeds.classList.add('card-body');
     divCardFeeds.append(divCardBodyFeeds);
@@ -108,26 +103,25 @@ const renderResult = (els, state, i18next) => {
       ulFeeds.prepend(li);
     });
     divCardBodyFeeds.append(ulFeeds);
-    els.btnPrimary.disabled = false;
-    els.feedback.textContent = i18next.t('feedback.success');
+    btnPrimary.disabled = false;
+    feedback.textContent = i18next.t('feedback.success');
   }
 };
 
 // МОДАЛЬНОЕ ОКНО
 const renderModal = (els, state) => {
+  const { modalBody, modalTitle, btnReadPost } = els;
   state.dataPosts.listPosts.forEach((post) => {
     if (post.idPost === state.dataPosts.idCurrentPost) {
-      els.modalTitle.textContent = post.titlePost;
-      els.modalBody.textContent = post.descriptionPost;
-      els.btnReadPost.setAttribute('href', `${post.linkPost}`);
+      modalTitle.textContent = post.titlePost;
+      modalBody.textContent = post.descriptionPost;
+      btnReadPost.setAttribute('href', `${post.linkPost}`);
     }
   });
 };
 
 export default (elements, state, i18next) => {
   const watchedState = onChange(state, (path) => {
-    renderContentPage(elements, i18next);
-
     switch (path) {
       case 'form.error':
         renderResultCheckedInput(elements, state, i18next);
