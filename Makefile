@@ -11,4 +11,4 @@ build:
 	NODE_ENV=production npx webpack
 
 test:
-	nmp test
+	npm test
