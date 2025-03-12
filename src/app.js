@@ -1,18 +1,28 @@
 /* eslint-disable no-param-reassign */
 import i18next from 'i18next';
 import * as yup from 'yup';
-import { isEmpty, uniqueId } from 'lodash';
+import { uniqueId } from 'lodash';
 import render from './render.js';
 import resources from './locales/index.js';
 import parser from './parser.js';
 
+const createRequestUrl = (url) => {
+  const baseUrl = new URL('https://allorigins.hexlet.app/get');
+  baseUrl.searchParams.set('disableCache', 'true');
+  baseUrl.searchParams.set('url', `${url}`);
+  return baseUrl.href;
+}
+
 export default () => {
   const i18nextInstance = i18next.createInstance();
-  i18nextInstance.init({
-    lng: 'ru',
-    debug: false,
-    resources,
-  });
+  const runApp = async () => {
+    await i18nextInstance.init({
+      lng: 'ru',
+      debug: false,
+      resources,
+    });
+  };
+  runApp();
 
   yup.setLocale({
     string: {
@@ -22,11 +32,12 @@ export default () => {
 
   const schemaUrl = yup.string().url();
 
-  function validate(link) {
+  function validateUrl(link) {
     try {
-      schemaUrl.validateSync(link, { abortEarly: false });
+      schemaUrl.validate(link, { abortEarly: false });
       return {};
     } catch (error) {
+      console.log('error in validate  ', error);
       const messages = error.errors.map((err) => err.key);
       return messages;
     }
@@ -68,25 +79,17 @@ export default () => {
     dataFeeds: [], // [{ idFeed, titleFeed, descriptionFeed, linkFeed }]
   };
 
-  // Рендер не отрисовывает текстовую часть страницы!
-  render(elements, initialState, i18nextInstance);
-  elements.headerPage.textContent = i18nextInstance.t('contentPage.headerPage');
-  elements.preheader.textContent = i18nextInstance.t('contentPage.preheader');
-  elements.placeholder.textContent = i18nextInstance.t('contentPage.placeholder');
-  elements.btnPrimary.textContent = i18nextInstance.t('contentPage.button');
-  elements.example.textContent = i18nextInstance.t('contentPage.example');
-  elements.footer.innerHTML = i18nextInstance.t('contentPage.footer');
-
   const state = render(elements, initialState, i18nextInstance);
 
   // Функция обновления постов
   const upgradePosts = (stateUp, initialStateUp) => {
     if (initialStateUp.dataFeeds.length > 0) {
       initialStateUp.dataPosts.statusUpgrade = 'check';
+      // console.log('upgrade has changes  ');
       initialStateUp.dataFeeds.forEach(({ idFeed, linkFeed }) => {
         const controller = new AbortController();
         setTimeout(() => controller.abort(), 5000);
-        const url = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(linkFeed)}`;
+        const url = createRequestUrl(linkFeed);
         fetch(url, { signal: controller.signal })
           .then((response) => response.json())
           .then((data) => parser(data))
@@ -101,66 +104,25 @@ export default () => {
               }
             });
           })
+          .then(() => setTimeout(upgradePosts, 5000, state, initialState))
           .catch((e) => console.log(e));
       });
     }
-
-    setTimeout(upgradePosts, 20000, state, initialState);
   };
 
   upgradePosts(state, initialState);
 
-  // Событие при клике
   elements.form.addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const url = formData.get('url');
-    const checkUrl = validate(url);
-    const checkError = isEmpty(checkUrl);
-    const arrLinksFeed = initialState.dataFeeds.map(({ linkFeed }) => linkFeed);
-    const checkDubleLink = arrLinksFeed.includes(url);
-
-    if (checkError === false) {
-      initialState.form.isValid = checkError;
-      state.form.error = String(checkUrl);
-    }
-
-    if (checkError === true) {
-      initialState.form.error = '';
-      if (checkDubleLink) {
-        initialState.form.isValid = false;
-        state.form.error = 'doubleUrl';
-      } else {
-        const controller = new AbortController();
-        setTimeout(() => controller.abort(), 5000);
-        const proxy = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
-        fetch(proxy, { signal: controller.signal })
-          .then((response) => response.json())
-          .then((data) => parser(data, url))
-          .then(({ feed, posts }) => {
-            initialState.form.isValid = true;
-            state.loadingProccess.status = 'load';
-            feed.idFeed = uniqueId('feed_');
-            initialState.dataFeeds.push(feed);
-            posts.forEach((post) => {
-              post.idFeed = feed.idFeed;
-              post.idPost = uniqueId('post_');
-              initialState.dataPosts.listPosts.unshift(post);
-            });
-            state.loadingProccess.status = 'success';
-          })
-          .catch((error) => {
-            initialState.form.isValid = false;
-            if (error.message === 'noRss') {
-              state.form.error = 'noRss';
-            } else {
-              state.form.error = 'abortError';
-            }
-          });
-      }
-    }
-  });
-
+    const checkUrl = validateUrl(url)
+      .then ((data) => console.log('success'))
+      .catch((error) => {
+        console.log('error after validate  ', error);
+      });
+    });
+    
   // Клик по диву с постами
   elements.posts.addEventListener('click', (e) => {
     const idOpenedPost = e.target.closest('li').getAttribute('id');

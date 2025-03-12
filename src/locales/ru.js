@@ -18,6 +18,5 @@ export default {
       noRss: 'Ресурс не содержит валидный RSS',
       abortError: 'Ошибка сети',
     },
-
   },
 };
