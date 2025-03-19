@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 import i18next from 'i18next';
 import * as yup from 'yup';
-import { uniqueId } from 'lodash';
+import { flatMap, uniqueId } from 'lodash';
 import render from './render.js';
 import resources from './locales/index.js';
 import parser from './parser.js';
@@ -33,14 +33,11 @@ export default () => {
   const schemaUrl = yup.string().url();
 
   function validateUrl(link) {
-    try {
-      schemaUrl.validate(link, { abortEarly: false });
-      return {};
-    } catch (error) {
-      console.log('error in validate  ', error);
-      const messages = error.errors.map((err) => err.key);
-      return messages;
-    }
+    return schemaUrl.validate(link, { abortEarly: true })
+    .then(() => {})
+    .catch(() => {
+      throw new Error('falseUrl');
+    });
   }
 
   const elements = {
@@ -83,31 +80,29 @@ export default () => {
 
   // Функция обновления постов
   const upgradePosts = (stateUp, initialStateUp) => {
-    if (initialStateUp.dataFeeds.length > 0) {
-      initialStateUp.dataPosts.statusUpgrade = 'check';
-      // console.log('upgrade has changes  ');
-      initialStateUp.dataFeeds.forEach(({ idFeed, linkFeed }) => {
-        const controller = new AbortController();
-        setTimeout(() => controller.abort(), 5000);
-        const url = createRequestUrl(linkFeed);
-        fetch(url, { signal: controller.signal })
-          .then((response) => response.json())
-          .then((data) => parser(data))
-          .then(({ posts }) => {
-            const oldPosts = initialStateUp.dataPosts.listPosts.map(({ linkPost }) => linkPost);
-            posts.forEach((post) => {
-              if (!oldPosts.includes(post.linkPost)) {
-                post.idFeed = idFeed;
-                post.idPost = uniqueId('post_');
-                initialStateUp.dataPosts.listPosts.unshift(post);
-                stateUp.dataPosts.statusUpgrade = 'success';
-              }
-            });
-          })
-          .then(() => setTimeout(upgradePosts, 5000, state, initialState))
-          .catch((e) => console.log(e));
-      });
-    }
+    console.log('START UPGRADE  ', initialStateUp.dataFeeds);
+    initialStateUp.dataFeeds.forEach(({ idFeed, linkFeed }) => {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), 5000);
+      const url = createRequestUrl(linkFeed);
+      fetch(url, { signal: controller.signal })
+        .then((response) => response.json())
+        .then((data) => parser(data))
+        .then(({ posts }) => {
+          const oldPosts = initialStateUp.dataPosts.listPosts.map(({ linkPost }) => linkPost);
+          const newPosts = posts.forEach((post) => {
+            if (!oldPosts.includes(post.linkPost)) {
+              post.idFeed = idFeed;
+              post.idPost = uniqueId('post_');
+            }
+          });
+          console.log('newPost  ', newPosts);
+          stateUp.dataPosts.listPosts = [...stateUp.dataPosts.listPosts, ...newPosts];
+          console.log('END UPGRADE');
+        })
+        .then(() => setTimeout(upgradePosts, 5000, stateUp, initialStateUp))
+        .catch((e) => console.log('error upgrade', e));
+    });
   };
 
   upgradePosts(state, initialState);
@@ -116,10 +111,37 @@ export default () => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const url = formData.get('url');
-    const checkUrl = validateUrl(url)
-      .then ((data) => console.log('success'))
+    validateUrl(url)
+      .then (() => {
+        const arrLinksFeed = initialState.dataFeeds.map(({ linkFeed }) => linkFeed);
+        if (arrLinksFeed.includes(url)) {
+          throw new Error('doubleUrl');
+        }
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), 5000);
+        const proxy = createRequestUrl(url);
+        fetch(proxy, { signal: controller.signal })
+          .then((response) => response.json())
+          .then((data) => parser(data, url))
+          .then(({ title, items }) => {
+            initialState.form.isValid = true;
+            state.loadingProccess.status = 'load';
+            title.idFeed = uniqueId('feed_');
+            initialState.dataFeeds.push(title);
+            let listPosts = [];
+            items.forEach((post) => {
+              post.idFeed = title.idFeed;
+              post.idPost = uniqueId('post_');
+              listPosts.push(post);
+            });
+            state.dataPosts.listPosts = [...state.dataPosts.listPosts, ...listPosts];
+            state.loadingProccess.status = 'success';
+        })
+      })
       .catch((error) => {
-        console.log('error after validate  ', error);
+        console.log('error in app ', error);
+        initialState.form.isValid = false;
+        state.form.error = String(error.message);
       });
     });
     
