@@ -8,6 +8,7 @@ const renderResultCheckedInput = (els, state, i18next) => {
     feedback.classList.remove('text-danger');
     input.classList.remove('is-invalid');
     feedback.classList.add('text-success');
+    feedback.textContent = i18next.t('feedback.success');
   } else {
     feedback.textContent = i18next.t(`feedback.${state.form.error}`);
     input.classList.add('is-invalid');
@@ -28,7 +29,6 @@ const loadingProccess = (els, state, i18next) => {
 
   if (state.loadingProccess.status === 'success') {
     btnPrimary.disabled = false;
-    feedback.textContent = i18next.t('feedback.success');
   }
 
   renderResultCheckedInput(els, state, i18next);
@@ -128,9 +128,6 @@ const renderModal = (els, state) => {
 
 export default (elements, state, i18next) => {
   const watchedState = onChange(state, (path) => {
-  // console.log('STATE IN RENDER  ', state);
-  // console.log('PATH IN RENDER  ', path);
-
     switch (path) {
       case 'form.error': renderResultCheckedInput(elements, state, i18next);
         break;
