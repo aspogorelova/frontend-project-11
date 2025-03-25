@@ -36,7 +36,6 @@ const loadingProccess = (els, state, i18next) => {
 
 // РЕЗУЛЬТАТ
 const renderResult = (els, state, i18next) => {
-  // console.log('START DRAW POSTS');
   renderResultCheckedInput(els, state, i18next);
   const { posts, feeds } = els;  
 

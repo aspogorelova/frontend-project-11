@@ -1,11 +1,12 @@
 export default (data, linkFeed) => {
   const parser = new DOMParser();
-  const parserData = parser.parseFromString(data.contents, 'application/xml');
-  const parserError = parserData.querySelector('parsererror');
-  console.log('parserError  ', parserError);
-  if (parserError) {
-    throw new Error('noRss');
-  } else {
+  try {
+    const parserData = parser.parseFromString(data.contents, 'application/xml');
+    const parserError = parserData.querySelector('parsererror');
+    if (parserError) {
+      console.log('parserError  ');
+      throw new Error('noRss');
+    }
     const titleFeed = parserData.querySelector('title').textContent;
     const descriptionFeed = parserData.querySelector('description').textContent;
     const title = { titleFeed, descriptionFeed, linkFeed };
@@ -19,5 +20,7 @@ export default (data, linkFeed) => {
       });
   
     return { title, items };
-    }
+  } catch (e) {
+    throw e;
+  }
   };

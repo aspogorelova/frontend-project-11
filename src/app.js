@@ -80,29 +80,34 @@ export default () => {
 
   // Функция обновления постов
   const upgradePosts = (stateUp, initialStateUp) => {
-    console.log('START UPGRADE  ', initialStateUp.dataFeeds);
-    initialStateUp.dataFeeds.forEach(({ idFeed, linkFeed }) => {
-      const controller = new AbortController();
-      setTimeout(() => controller.abort(), 5000);
-      const url = createRequestUrl(linkFeed);
-      fetch(url, { signal: controller.signal })
-        .then((response) => response.json())
-        .then((data) => parser(data))
-        .then(({ posts }) => {
-          const oldPosts = initialStateUp.dataPosts.listPosts.map(({ linkPost }) => linkPost);
-          const newPosts = posts.forEach((post) => {
-            if (!oldPosts.includes(post.linkPost)) {
-              post.idFeed = idFeed;
-              post.idPost = uniqueId('post_');
-            }
-          });
-          console.log('newPost  ', newPosts);
-          stateUp.dataPosts.listPosts = [...stateUp.dataPosts.listPosts, ...newPosts];
-          console.log('END UPGRADE');
-        })
-        .then(() => setTimeout(upgradePosts, 5000, stateUp, initialStateUp))
-        .catch((e) => console.log('error upgrade', e));
+    let promise = new Promise((upgrade) => {
+      upgrade(stateUp, initialStateUp);
     });
+
+    promise.then(
+      () => {
+        initialStateUp.dataFeeds.map(({ idFeed, linkFeed }) => {
+          const controller = new AbortController();
+          setTimeout(() => controller.abort(), 5000);
+          const url = createRequestUrl(linkFeed);
+          fetch(url, { signal: controller.signal })
+            .then((response) => response.json())
+            .then((data) => parser(data))
+            .then(({ title, items }) => {
+              const oldPosts = initialStateUp.dataPosts.listPosts.map(({ linkPost }) => linkPost);
+              const newPosts = items.filter((post) => {
+                if (!oldPosts.includes(post.linkPost)) {
+                  post.idFeed = idFeed;
+                  post.idPost = uniqueId('post_');
+                  return post;
+                }
+              });
+              stateUp.dataPosts.listPosts = [...newPosts, ...stateUp.dataPosts.listPosts];
+            })
+        })
+      })
+    .then(() => setTimeout(upgradePosts, 5000, stateUp, initialStateUp))
+    .catch((error) => console.log('error upgrade  ', error));
   };
 
   upgradePosts(state, initialState);
