@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 import i18next from 'i18next';
 import * as yup from 'yup';
-import { flatMap, uniqueId } from 'lodash';
+import { uniqueId } from 'lodash';
 import render from './render.js';
 import resources from './locales/index.js';
 import parser from './parser.js';
@@ -36,6 +36,7 @@ export default () => {
     return schemaUrl.validate(link, { abortEarly: true })
     .then(() => {})
     .catch(() => {
+      console.log('error in validate');
       throw new Error('falseUrl');
     });
   }
@@ -116,39 +117,49 @@ export default () => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const url = formData.get('url');
-    validateUrl(url)
-      .then (() => {
-        const arrLinksFeed = initialState.dataFeeds.map(({ linkFeed }) => linkFeed);
-        if (arrLinksFeed.includes(url)) {
-          throw new Error('doubleUrl');
+    const validateLink = validateUrl(url)
+      .then(() => {
+        console.log('LINK VALIDATE');
+        if (validateLink) {
+          const arrLinksFeed = initialState.dataFeeds.map(({ linkFeed }) => linkFeed);
+          console.log('array link feeds  ', arrLinksFeed);
+            if (arrLinksFeed.includes(url)) {
+              throw new Error('doubleUrl');
+            };
         }
-        const controller = new AbortController();
-        setTimeout(() => controller.abort(), 5000);
-        const proxy = createRequestUrl(url);
-        fetch(proxy, { signal: controller.signal })
-          .then((response) => response.json())
-          .then((data) => parser(data, url))
-          .then(({ title, items }) => {
-            initialState.form.isValid = true;
-            state.loadingProccess.status = 'load';
-            title.idFeed = uniqueId('feed_');
-            initialState.dataFeeds.push(title);
-            let listPosts = [];
-            items.forEach((post) => {
-              post.idFeed = title.idFeed;
-              post.idPost = uniqueId('post_');
-              listPosts.push(post);
-            });
-            state.dataPosts.listPosts = [...state.dataPosts.listPosts, ...listPosts];
-            state.loadingProccess.status = 'success';
-        })
       })
-      .catch((error) => {
-        console.log('error in app ', error);
-        initialState.form.isValid = false;
-        state.form.error = String(error.message);
+      .catch ((error) => {
+      console.log('ERROR in validate link  ', error);
+      initialState.form.isValid = false;
+      state.form.error = String(error.message);
       });
+    
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 5000);
+    const proxy = createRequestUrl(url);
+    const dataUrl = fetch(proxy, { signal: controller.signal });
+    dataUrl.then((response) => {
+    const parserData = parser(response.json(), url);
+    const { title, items } = parserData;
+    initialState.form.isValid = true;
+    state.loadingProccess.status = 'load';
+    title.idFeed = uniqueId('feed_');
+    initialState.dataFeeds.push(title);
+    let listPosts = [];
+    items.forEach((post) => {
+    post.idFeed = title.idFeed;
+    post.idPost = uniqueId('post_');
+    listPosts.push(post);
     });
+
+    state.dataPosts.listPosts = [...state.dataPosts.listPosts, ...listPosts];
+    state.loadingProccess.status = 'success';
+    })
+          .catch((error) => {
+            initialState.form.isValid = false;
+            state.form.error = String(error.message);
+          })
+      })
     
   // Клик по диву с постами
   elements.posts.addEventListener('click', (e) => {
