@@ -3,6 +3,7 @@ export default (data, linkFeed) => {
   try {
     const parserData = parser.parseFromString(data.contents, 'application/xml');
     const parserError = parserData.querySelector('parsererror');
+    console.log('parser error  ', parserError);
     if (parserError) {
       throw new Error('noRss');
     }

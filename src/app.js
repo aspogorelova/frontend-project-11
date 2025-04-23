@@ -118,8 +118,8 @@ export default () => {
     const formData = new FormData(e.target);
     const url = formData.get('url');
     const validateLink = validateUrl(url)
-      .then(() => {
-        console.log('LINK VALIDATE');
+      .then((data) => {
+        console.log('validate url  ', data);
         if (validateLink) {
           const arrLinksFeed = initialState.dataFeeds.map(({ linkFeed }) => linkFeed);
           console.log('array link feeds  ', arrLinksFeed);
@@ -139,6 +139,7 @@ export default () => {
     const proxy = createRequestUrl(url);
     const dataUrl = fetch(proxy, { signal: controller.signal });
     dataUrl.then((response) => {
+      console.log('start parser data');
     const parserData = parser(response.json(), url);
     const { title, items } = parserData;
     initialState.form.isValid = true;
