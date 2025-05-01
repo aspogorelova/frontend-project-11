@@ -20,7 +20,7 @@ const renderResultCheckedInput = (els, state, i18next) => {
 // ЗАГРУЗКА ДАННЫХ
 const loadingProccess = (els, state, i18next) => {
   const {
-    input, btnPrimary, feedback,
+    input, btnPrimary,
   } = els;
   if (state.loadingProccess.status === 'load') {
     input.value = '';
@@ -32,12 +32,12 @@ const loadingProccess = (els, state, i18next) => {
   }
 
   renderResultCheckedInput(els, state, i18next);
-}
+};
 
 // РЕЗУЛЬТАТ
 const renderResult = (els, state, i18next) => {
   renderResultCheckedInput(els, state, i18next);
-  const { posts, feeds } = els;  
+  const { posts, feeds } = els;
 
   // Рисуем колонку с постами. Заголовок Посты
   posts.innerHTML = '';
@@ -111,7 +111,7 @@ const renderResult = (els, state, i18next) => {
     ulFeeds.prepend(li);
   });
   divCardBodyFeeds.append(ulFeeds);
-  };
+};
 
 // МОДАЛЬНОЕ ОКНО
 const renderModal = (els, state) => {

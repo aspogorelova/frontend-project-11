@@ -11,7 +11,7 @@ const createRequestUrl = (url) => {
   baseUrl.searchParams.set('disableCache', 'true');
   baseUrl.searchParams.set('url', `${url}`);
   return baseUrl.href;
-}
+};
 
 export default () => {
   const i18nextInstance = i18next.createInstance();
@@ -80,32 +80,37 @@ export default () => {
 
   // Функция обновления постов
   const upgradePosts = (stateUp, initialStateUp) => {
-    let promise = new Promise((upgrade) => {
+    const promise = new Promise((upgrade) => {
       upgrade(stateUp, initialStateUp);
     });
 
     promise.then(
       () => {
-        initialStateUp.dataFeeds.map(({ idFeed, linkFeed }) => {
+        initialStateUp.dataFeeds.forEach(({ idFeed, linkFeed }) => {
           const controller = new AbortController();
           setTimeout(() => controller.abort(), 5000);
           const url = createRequestUrl(linkFeed);
           fetch(url, { signal: controller.signal })
             .then((response) => response.json())
-            .then((data) => parser(data))
-            .then(({ title, items }) => {
+            .then((data) => {
+              const { items } = parser(data);
               const oldPosts = initialStateUp.dataPosts.listPosts.map(({ linkPost }) => linkPost);
               const newPosts = items.filter((post) => {
                 if (!oldPosts.includes(post.linkPost)) {
                   post.idFeed = idFeed;
                   post.idPost = uniqueId('post_');
-                  return post;
+                  return true;
                 }
+                return false;
               });
               stateUp.dataPosts.listPosts = [...newPosts, ...stateUp.dataPosts.listPosts];
             })
-        })
-      })
+            .catch((e) => {
+              throw e;
+            });
+        });
+      },
+    )
       .then(() => setTimeout(upgradePosts, 5000, stateUp, initialStateUp))
       .catch((error) => console.log('error upgrade  ', error));
   };
@@ -121,7 +126,7 @@ export default () => {
         const arrLinksFeed = initialState.dataFeeds.map(({ linkFeed }) => linkFeed);
         if (arrLinksFeed.includes(url)) {
           throw new Error('doubleUrl');
-        };
+        }
       })
       .then(() => {
         const controller = new AbortController();
@@ -135,7 +140,7 @@ export default () => {
             state.loadingProccess.status = 'load';
             title.idFeed = uniqueId('feed_');
             initialState.dataFeeds.push(title);
-            let listPosts = [];
+            const listPosts = [];
             items.forEach((post) => {
               post.idFeed = title.idFeed;
               post.idPost = uniqueId('post_');
