@@ -36,7 +36,6 @@ export default () => {
     return schemaUrl.validate(link, { abortEarly: true })
       .then(() => { })
       .catch(() => {
-        console.log('error in validate - FALSE URL');
         throw new Error('falseUrl');
       });
   }
@@ -132,7 +131,6 @@ export default () => {
           .then((response) => response.json())
           .then((dataResponse) => {
             const { title, items } = parser(dataResponse, url);
-            console.log('data after parser  ', { title, items });
             initialState.form.isValid = true;
             state.loadingProccess.status = 'load';
             title.idFeed = uniqueId('feed_');
@@ -153,7 +151,6 @@ export default () => {
           });
       })
       .catch((error) => {
-        console.log('RESULT validate url ERROR  ', error);
         initialState.form.isValid = false;
         state.form.error = String(error.message);
       });

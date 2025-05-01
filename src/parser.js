@@ -4,7 +4,6 @@ export default (data, linkFeed) => {
     const parserData = parser.parseFromString(data.contents, 'application/xml');
     const parserError = parserData.querySelector('parsererror');
     if (parserError !== null) {
-      console.log('ERROR RSS');
       throw new Error('noRss');
     }
     const titleFeed = parserData.querySelector('title').textContent;
@@ -21,7 +20,6 @@ export default (data, linkFeed) => {
   
     return { title, items };
   } catch (e) {
-    console.log('catch e in parser  ', e);
     throw e;
   }
   };
