@@ -1,12 +1,12 @@
 export default (data, linkFeed) => {
   const parser = new DOMParser();
   try {
-    data.then((contentData) => {
-      const parserData = parser.parseFromString(contentData.contents, 'application/xml');
-      const parserError = parserData.querySelector('parsererror');
-      if (parserError !== null) {
-        throw new Error('noRss');
-      }
+    const parserData = parser.parseFromString(data.contents, 'application/xml');
+    const parserError = parserData.querySelector('parsererror');
+    if (parserError !== null) {
+      console.log('ERROR RSS');
+      throw new Error('noRss');
+    }
     const titleFeed = parserData.querySelector('title').textContent;
     const descriptionFeed = parserData.querySelector('description').textContent;
     const title = { titleFeed, descriptionFeed, linkFeed };
@@ -19,11 +19,9 @@ export default (data, linkFeed) => {
         return { titlePost, descriptionPost, linkPost };
       });
   
-      console.log('result parser  ', { title, items });
     return { title, items };
-    });
   } catch (e) {
-    console.log('error in parser  ', e);
+    console.log('catch e in parser  ', e);
     throw e;
   }
   };

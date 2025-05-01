@@ -36,7 +36,7 @@ export default () => {
     return schemaUrl.validate(link, { abortEarly: true })
       .then(() => { })
       .catch(() => {
-        console.log('error in validate');
+        console.log('error in validate - FALSE URL');
         throw new Error('falseUrl');
       });
   }
@@ -117,58 +117,55 @@ export default () => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const url = formData.get('url');
-    const validateLink = validateUrl(url)
+    validateUrl(url)
       .then(() => {
-        if (validateLink) {
-          const arrLinksFeed = initialState.dataFeeds.map(({ linkFeed }) => linkFeed);
-          console.log('array link feeds  ', arrLinksFeed);
-          if (arrLinksFeed.includes(url)) {
-            throw new Error('doubleUrl');
-          };
-        }
+        const arrLinksFeed = initialState.dataFeeds.map(({ linkFeed }) => linkFeed);
+        if (arrLinksFeed.includes(url)) {
+          throw new Error('doubleUrl');
+        };
+      })
+      .then(() => {
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), 5000);
+        const proxy = createRequestUrl(url);
+        fetch(proxy, { signal: controller.signal })
+          .then((response) => response.json())
+          .then((dataResponse) => {
+            const { title, items } = parser(dataResponse, url);
+            console.log('data after parser  ', { title, items });
+            initialState.form.isValid = true;
+            state.loadingProccess.status = 'load';
+            title.idFeed = uniqueId('feed_');
+            initialState.dataFeeds.push(title);
+            let listPosts = [];
+            items.forEach((post) => {
+              post.idFeed = title.idFeed;
+              post.idPost = uniqueId('post_');
+              listPosts.push(post);
+            });
+
+            state.dataPosts.listPosts = [...state.dataPosts.listPosts, ...listPosts];
+            state.loadingProccess.status = 'success';
+          })
+          .catch((error) => {
+            initialState.form.isValid = false;
+            state.form.error = String(error.message);
+          });
       })
       .catch((error) => {
-        console.log('ERROR in validate link  ', error);
+        console.log('RESULT validate url ERROR  ', error);
         initialState.form.isValid = false;
         state.form.error = String(error.message);
       });
+  });
 
-    const controller = new AbortController();
-    setTimeout(() => controller.abort(), 5000);
-    const proxy = createRequestUrl(url);
-    const dataUrl = fetch(proxy, { signal: controller.signal });
-    dataUrl.then((response) => parser(response.json(), url))
-      .then(({ title, items }) => {
-        console.log('RESULT parser  ', { title, items });
-        initialState.form.isValid = true;
-        state.loadingProccess.status = 'load';
-        console.log('title  ', title);
-        title.idFeed = uniqueId('feed_');
-        initialState.dataFeeds.push(title);
-        let listPosts = [];
-        items.forEach((post) => {
-          post.idFeed = title.idFeed;
-          post.idPost = uniqueId('post_');
-          listPosts.push(post);
-        });
-
-        state.dataPosts.listPosts = [...state.dataPosts.listPosts, ...listPosts];
-        state.loadingProccess.status = 'success';
-      })
-      .catch ((error) => {
-        console.log('ERROR in app  ', error);
-    initialState.form.isValid = false;
-    state.form.error = String(error.message);
-  })
-})
-
-// Клик по диву с постами
-elements.posts.addEventListener('click', (e) => {
-  const idOpenedPost = e.target.closest('li').getAttribute('id');
-  state.dataPosts.openedPosts.add(idOpenedPost);
-  if (e.target.tagName === 'BUTTON') {
-    e.preventDefault();
-    state.dataPosts.idCurrentPost = idOpenedPost;
-  }
-});
+  // Клик по диву с постами
+  elements.posts.addEventListener('click', (e) => {
+    const idOpenedPost = e.target.closest('li').getAttribute('id');
+    state.dataPosts.openedPosts.add(idOpenedPost);
+    if (e.target.tagName === 'BUTTON') {
+      e.preventDefault();
+      state.dataPosts.idCurrentPost = idOpenedPost;
+    }
+  });
 };

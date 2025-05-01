@@ -126,8 +126,9 @@ const renderModal = (els, state) => {
 };
 
 export default (elements, state, i18next) => {
-  console.log('ERROR in state render  ', state);
   const watchedState = onChange(state, (path) => {
+    console.log('STATE render  ', state);
+    console.log('PATH render  ', path);
     switch (path) {
       case 'form.error': renderResultCheckedInput(elements, state, i18next);
         break;
