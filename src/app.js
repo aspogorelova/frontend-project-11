@@ -132,8 +132,7 @@ export default () => {
         const controller = new AbortController();
         setTimeout(() => controller.abort(), 5000);
         const proxy = createRequestUrl(url);
-        console.log('before fetch');
-        fetch(proxy, { signal: controller.signal });
+        return fetch(proxy, { signal: controller.signal });
       })
       .then((response) => response.json())
       .then((dataResponse) => {
@@ -153,7 +152,11 @@ export default () => {
         state.loadingProccess.status = 'success';
       })
       .catch((error) => {
-        console.log('ERROR  ', error);
+        if (error.name === 'AbortError') {
+          console.log('Fetch aborted:', error);
+        } else {
+          console.log('Fetch error:', error);
+        }
         initialState.form.isValid = false;
         state.form.error = String(error.message);
       });
