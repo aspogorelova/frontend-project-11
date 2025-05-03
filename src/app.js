@@ -132,30 +132,28 @@ export default () => {
         const controller = new AbortController();
         setTimeout(() => controller.abort(), 5000);
         const proxy = createRequestUrl(url);
-        fetch(proxy, { signal: controller.signal })
-          .then((response) => response.json())
-          .then((dataResponse) => {
-            const { title, items } = parser(dataResponse, url);
-            initialState.form.isValid = true;
-            state.loadingProccess.status = 'load';
-            title.idFeed = uniqueId('feed_');
-            initialState.dataFeeds.push(title);
-            const listPosts = [];
-            items.forEach((post) => {
-              post.idFeed = title.idFeed;
-              post.idPost = uniqueId('post_');
-              listPosts.push(post);
-            });
+        console.log('before fetch');
+        fetch(proxy, { signal: controller.signal });
+      })
+      .then((response) => response.json())
+      .then((dataResponse) => {
+        const { title, items } = parser(dataResponse, url);
+        initialState.form.isValid = true;
+        state.loadingProccess.status = 'load';
+        title.idFeed = uniqueId('feed_');
+        initialState.dataFeeds.push(title);
+        const listPosts = [];
+        items.forEach((post) => {
+          post.idFeed = title.idFeed;
+          post.idPost = uniqueId('post_');
+          listPosts.push(post);
+        });
 
-            state.dataPosts.listPosts = [...state.dataPosts.listPosts, ...listPosts];
-            state.loadingProccess.status = 'success';
-          })
-          .catch((error) => {
-            initialState.form.isValid = false;
-            state.form.error = String(error.message);
-          });
+        state.dataPosts.listPosts = [...state.dataPosts.listPosts, ...listPosts];
+        state.loadingProccess.status = 'success';
       })
       .catch((error) => {
+        console.log('ERROR  ', error);
         initialState.form.isValid = false;
         state.form.error = String(error.message);
       });
