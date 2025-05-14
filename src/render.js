@@ -3,7 +3,9 @@ import onChange from 'on-change';
 // ИНПУТ
 const renderResultCheckedInput = (els, state, i18next) => {
   const { feedback, input } = els;
+
   if (state.form.isValid === true) {
+    input.value = '';
     feedback.textContent = '';
     feedback.classList.remove('text-danger');
     input.classList.remove('is-invalid');
@@ -19,19 +21,15 @@ const renderResultCheckedInput = (els, state, i18next) => {
 
 // ЗАГРУЗКА ДАННЫХ
 const loadingProccess = (els, state, i18next) => {
-  const {
-    input, btnPrimary,
-  } = els;
+  const { btnPrimary } = els;
   if (state.loadingProccess.status === 'load') {
-    input.value = '';
     btnPrimary.disabled = true;
   }
 
   if (state.loadingProccess.status === 'success') {
     btnPrimary.disabled = false;
+    renderResultCheckedInput(els, state, i18next);
   }
-
-  renderResultCheckedInput(els, state, i18next);
 };
 
 // РЕЗУЛЬТАТ

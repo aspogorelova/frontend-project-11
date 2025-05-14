@@ -34,7 +34,6 @@ export default () => {
 
   function validateUrl(link) {
     return schemaUrl.validate(link, { abortEarly: true })
-      .then(() => { })
       .catch(() => {
         throw new Error('falseUrl');
       });
@@ -80,39 +79,37 @@ export default () => {
 
   // Функция обновления постов
   const upgradePosts = (stateUp, initialStateUp) => {
-    const promise = new Promise((upgrade) => {
-      upgrade(stateUp, initialStateUp);
+    const promises = initialState.dataFeeds.map(({ idFeed, linkFeed }) => {
+      const url = createRequestUrl(linkFeed);
+      return fetch(url)
+        .then((response) => response.json())
+        .then((data) => {
+          const { items } = parser(data);
+          const oldPosts = initialStateUp.dataPosts.listPosts.map(({ linkPost }) => linkPost);
+          const newPosts = items.filter((post) => {
+            if (!oldPosts.includes(post.linkPost)) {
+              post.idFeed = idFeed;
+              post.idPost = uniqueId('post_');
+              return true;
+            }
+            return false;
+          });
+
+          return newPosts;
+        })
+        .catch((e) => {
+          throw e;
+        });
     });
 
-    promise.then(
-      () => {
-        initialStateUp.dataFeeds.forEach(({ idFeed, linkFeed }) => {
-          const controller = new AbortController();
-          setTimeout(() => controller.abort(), 5000);
-          const url = createRequestUrl(linkFeed);
-          fetch(url, { signal: controller.signal })
-            .then((response) => response.json())
-            .then((data) => {
-              const { items } = parser(data);
-              const oldPosts = initialStateUp.dataPosts.listPosts.map(({ linkPost }) => linkPost);
-              const newPosts = items.filter((post) => {
-                if (!oldPosts.includes(post.linkPost)) {
-                  post.idFeed = idFeed;
-                  post.idPost = uniqueId('post_');
-                  return true;
-                }
-                return false;
-              });
-              stateUp.dataPosts.listPosts = [...newPosts, ...stateUp.dataPosts.listPosts];
-            })
-            .catch((e) => {
-              throw e;
-            });
+    Promise.all(promises)
+      .then((resultUpgrade) => {
+        resultUpgrade.forEach((newPost) => {
+          stateUp.dataPosts.listPosts = [...newPost, ...stateUp.dataPosts.listPosts];
         });
-      },
-    )
-      .then(() => setTimeout(upgradePosts, 5000, stateUp, initialStateUp))
-      .catch((error) => console.log('error upgrade  ', error));
+        setTimeout(() => upgradePosts(stateUp, initialStateUp), 5000);
+      })
+      .catch((error) => console.log('error upgrade', error));
   };
 
   upgradePosts(state, initialState);
@@ -121,6 +118,8 @@ export default () => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const url = formData.get('url');
+    state.loadingProccess.status = 'load';
+
     validateUrl(url)
       .then(() => {
         const arrLinksFeed = initialState.dataFeeds.map(({ linkFeed }) => linkFeed);
@@ -129,16 +128,16 @@ export default () => {
         }
       })
       .then(() => {
-        const controller = new AbortController();
-        setTimeout(() => controller.abort(), 5000);
         const proxy = createRequestUrl(url);
-        return fetch(proxy, { signal: controller.signal });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        return fetch(proxy, { signal: controller.signal })
+          .finally(() => clearTimeout(timeoutId));
       })
       .then((response) => response.json())
       .then((dataResponse) => {
         const { title, items } = parser(dataResponse, url);
         initialState.form.isValid = true;
-        state.loadingProccess.status = 'load';
         title.idFeed = uniqueId('feed_');
         initialState.dataFeeds.push(title);
         const listPosts = [];
@@ -153,12 +152,13 @@ export default () => {
       })
       .catch((error) => {
         if (error.name === 'AbortError') {
-          console.log('Fetch aborted:', error);
+          initialState.form.isValid = false;
+          state.form.error = 'abortError';
         } else {
-          console.log('Fetch error:', error);
+          initialState.form.isValid = false;
+          state.form.error = String(error.message);
         }
-        initialState.form.isValid = false;
-        state.form.error = String(error.message);
+        state.loadingProccess.status = 'success';
       });
   });
 
