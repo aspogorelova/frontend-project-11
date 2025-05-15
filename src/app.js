@@ -131,7 +131,9 @@ export default () => {
         const proxy = createRequestUrl(url);
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
+
         return fetch(proxy, { signal: controller.signal })
+          .catch(() => { throw new Error('abortError'); })
           .finally(() => clearTimeout(timeoutId));
       })
       .then((response) => response.json())
