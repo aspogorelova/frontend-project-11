@@ -1,4 +1,4 @@
-import HtmlWebpackPlugin from 'html-webpack-plugin';
+import HtmlWebpackPlugin from 'html-webpack-plugin'
 
 /* const isProduction = process.env.NODE_ENV == 'production'; */
 
@@ -55,6 +55,6 @@ const config = {
       },
     ],
   },
-};
+}
 
-export default config;
+export default config
