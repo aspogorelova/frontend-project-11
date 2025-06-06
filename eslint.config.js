@@ -7,5 +7,5 @@ export default defineConfig([
   { ignores: ['node_modules', 'dist', 'webpack.config.js'] },
   stylistic.configs.recommended,
   { files: ['**/*.{js,mjs,cjs}'], plugins: { js }, extends: ['js/recommended'] },
-  { files: ['**/*.{js,mjs,cjs}'], languageOptions: { globals: { ...globals.browser, ...globals.node, ...globals.jest } } },
+  { files: ['**/*.{js,mjs,cjs}'], languageOptions: { globals: { ...globals.browser, ...globals.node, ...globals.jest, process: true } } },
 ])
