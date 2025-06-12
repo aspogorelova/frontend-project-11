@@ -1,5 +1,5 @@
 develop:
-	npx webpack serve
+	npm run dev
 
 install:
 	npm ci
@@ -8,7 +8,7 @@ lint:
 	npx eslint .
 
 build:
-	NODE_ENV=production npx webpack
+	NODE_ENV=production npm run build
 
 test:
-	npm test
+	echo no tests

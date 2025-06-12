@@ -13,6 +13,7 @@ const createRequestUrl = (url) => {
 }
 
 export default () => {
+  console.log('START 0');
   const i18nextInstance = i18next.createInstance()
   const runApp = async () => {
     await i18nextInstance.init({
@@ -114,6 +115,7 @@ export default () => {
   upgradePosts(state, initialState)
 
   elements.form.addEventListener('submit', (e) => {
+    console.log('START');
     e.preventDefault()
     const formData = new FormData(e.target)
     const url = formData.get('url')
