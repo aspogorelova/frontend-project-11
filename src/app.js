@@ -1,19 +1,13 @@
 import i18next from 'i18next'
 import * as yup from 'yup'
+import axios from 'axios'
 import { uniqueId } from 'lodash'
 import render from './render.js'
 import resources from './locales/index.js'
 import parser from './parser.js'
-
-const createRequestUrl = (url) => {
-  const baseUrl = new URL('https://allorigins.hexlet.app/get')
-  baseUrl.searchParams.set('disableCache', 'true')
-  baseUrl.searchParams.set('url', `${url}`)
-  return baseUrl.href
-}
+import createRequestUrl from './createRequestUrl.js'
 
 export default () => {
-  console.log('START 0');
   const i18nextInstance = i18next.createInstance()
   const runApp = async () => {
     await i18nextInstance.init({
@@ -114,8 +108,10 @@ export default () => {
 
   upgradePosts(state, initialState)
 
+  console.log('START  ')
+  console.log('form  ', elements.form)
+
   elements.form.addEventListener('submit', (e) => {
-    console.log('START');
     e.preventDefault()
     const formData = new FormData(e.target)
     const url = formData.get('url')
@@ -129,11 +125,11 @@ export default () => {
         }
       })
       .then(() => {
-        const proxy = createRequestUrl(url)
+        const proxyUrl = createRequestUrl (url)
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(), 5000)
 
-        return fetch(proxy, { signal: controller.signal })
+        return fetch(proxyUrl, { signal: controller.signal })
           .catch(() => { throw new Error('abortError') })
           .finally(() => clearTimeout(timeoutId))
       })
