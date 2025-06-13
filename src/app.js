@@ -1,6 +1,6 @@
 import i18next from 'i18next'
 import * as yup from 'yup'
-import axios from 'axios'
+// import axios from 'axios'
 import { uniqueId } from 'lodash'
 import render from './render.js'
 import resources from './locales/index.js'

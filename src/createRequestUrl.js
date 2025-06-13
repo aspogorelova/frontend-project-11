@@ -1,6 +1,8 @@
-export default createRequestUrl = (url) => {
+const createRequestUrl = (url) => {
   const baseUrl = new URL('https://allorigins.hexlet.app/get')
   baseUrl.searchParams.set('disableCache', 'true')
   baseUrl.searchParams.set('url', `${url}`)
-  return String(baseUrl.href);
+  return String(baseUrl.href)
 }
+
+export default createRequestUrl

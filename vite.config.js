@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite';
-import { fileURLToPath } from 'node:url';
-import { resolve } from 'path';
+import { defineConfig } from 'vite'
+import { fileURLToPath } from 'node:url'
+import { resolve } from 'path'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
@@ -10,7 +10,7 @@ export default defineConfig({
   server: {
     open: true,
     fs: {
-       strict: false,
+      strict: false,
     },
     resolve: {
       alias: {
@@ -25,4 +25,4 @@ export default defineConfig({
       },
     },
   },
-});
+})
