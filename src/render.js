@@ -146,7 +146,9 @@ export default (elements, state, i18next) => {
       case 'dataPosts.openedPosts': renderResult(elements, state, i18next)
         break
 
-      default: console.log('error default')
+      case 'form.isValid': break
+
+      default:
     }
   })
 

@@ -12,17 +12,17 @@ export default defineConfig({
     fs: {
       strict: false,
     },
-    resolve: {
-      alias: {
-        '@': resolve(__dirname, 'src'),
-      },
-    },
     css: {
       preprocessorOptions: {
         scss: {
           quietDeps: true,
         },
       },
+    },
+  },
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
     },
   },
 })

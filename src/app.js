@@ -1,6 +1,6 @@
 import i18next from 'i18next'
 import * as yup from 'yup'
-// import axios from 'axios'
+import axios from 'axios'
 import { uniqueId } from 'lodash'
 import render from './render.js'
 import resources from './locales/index.js'
@@ -72,14 +72,13 @@ export default () => {
   const state = render(elements, initialState, i18nextInstance)
 
   // Функция обновления постов
-  const upgradePosts = (stateUp, initialStateUp) => {
-    const promises = initialState.dataFeeds.map(({ idFeed, linkFeed }) => {
-      const url = createRequestUrl(linkFeed)
-      return fetch(url)
-        .then(response => response.json())
+  const upgradePosts = (stateUp) => {
+    const promises = stateUp.dataFeeds.map(({ idFeed, linkFeed }) => {
+      const proxyUrl = createRequestUrl(linkFeed)
+      return axios.get(proxyUrl)
         .then((data) => {
-          const { items } = parser(data)
-          const oldPosts = initialStateUp.dataPosts.listPosts.map(({ linkPost }) => linkPost)
+          const { items } = parser(data.data)
+          const oldPosts = stateUp.dataPosts.listPosts.map(({ linkPost }) => linkPost)
           const newPosts = items.filter((post) => {
             if (!oldPosts.includes(post.linkPost)) {
               post.idFeed = idFeed
@@ -101,15 +100,12 @@ export default () => {
         resultUpgrade.forEach((newPost) => {
           stateUp.dataPosts.listPosts = [...newPost, ...stateUp.dataPosts.listPosts]
         })
-        setTimeout(() => upgradePosts(stateUp, initialStateUp), 5000)
+        setTimeout(() => upgradePosts(stateUp), 5000)
       })
       .catch(error => console.log('error upgrade', error))
   }
 
-  upgradePosts(state, initialState)
-
-  console.log('START  ')
-  console.log('form  ', elements.form)
+  upgradePosts(state)
 
   elements.form.addEventListener('submit', (e) => {
     e.preventDefault()
@@ -119,26 +115,21 @@ export default () => {
 
     validateUrl(url)
       .then(() => {
-        const arrLinksFeed = initialState.dataFeeds.map(({ linkFeed }) => linkFeed)
+        const arrLinksFeed = state.dataFeeds.map(({ linkFeed }) => linkFeed)
         if (arrLinksFeed.includes(url)) {
           throw new Error('doubleUrl')
         }
       })
       .then(() => {
-        const proxyUrl = createRequestUrl (url)
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 5000)
-
-        return fetch(proxyUrl, { signal: controller.signal })
+        const proxyUrl = createRequestUrl(url)
+        return axios.get(proxyUrl, { timeout: 5000 })
           .catch(() => { throw new Error('abortError') })
-          .finally(() => clearTimeout(timeoutId))
       })
-      .then(response => response.json())
       .then((dataResponse) => {
-        const { title, items } = parser(dataResponse, url)
-        initialState.form.isValid = true
+        const { title, items } = parser(dataResponse.data, url)
+        state.form.isValid = true
         title.idFeed = uniqueId('feed_')
-        initialState.dataFeeds.push(title)
+        state.dataFeeds.push(title)
         const listPosts = []
         items.forEach((post) => {
           post.idFeed = title.idFeed
@@ -151,11 +142,11 @@ export default () => {
       })
       .catch((error) => {
         if (error.name === 'AbortError') {
-          initialState.form.isValid = false
+          state.form.isValid = false
           state.form.error = 'abortError'
         }
         else {
-          initialState.form.isValid = false
+          state.form.isValid = false
           state.form.error = String(error.message)
         }
         state.loadingProccess.status = 'success'
